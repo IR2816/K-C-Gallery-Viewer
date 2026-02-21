@@ -1,5 +1,11 @@
 # KC Gallery Viewer
 
+<div align="center">
+
+![KC Gallery Viewer Icon](assets/images/Icon.png)
+
+</div>
+
 Flutter app for browsing, searching, and downloading media from Kemono & Coomer mirrors with a polished gallery experience and multi‑platform support.
 
 ## Features
