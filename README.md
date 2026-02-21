@@ -325,7 +325,7 @@ Users are responsible for complying with applicable laws and content usage polic
 
 Project maintained by:
 
-**Your Name / Organization**
+**IR2816**
 
 For issues, feature requests, or contributions, open a GitHub Issue or Pull Request.
 
