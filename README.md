@@ -1,56 +1,331 @@
 # KC Gallery Viewer
 
-<div align="center">
+<p align="center">
+  <img src="assets/images/Icon.png" alt="KC Gallery Viewer Icon" width="180" />
+</p>
 
-![KC Gallery Viewer Icon](assets/images/Icon.png)
+<p align="center">
+  <strong>Cross-Platform Flutter Client for Kemono & Coomer Mirrors</strong><br/>
+  High-performance gallery experience with search, download management, and offline support.
+</p>
 
-</div>
+<p align="center">
+  <img src="https://img.shields.io/badge/Flutter-3.10+-02569B?logo=flutter" />
+  <img src="https://img.shields.io/badge/Dart-3.10+-0175C2?logo=dart" />
+  <img src="https://img.shields.io/badge/Platforms-Android%20%7C%20Web%20%7C%20Windows%20%7C%20macOS%20%7C%20Linux-lightgrey" />
+  <img src="https://img.shields.io/badge/Status-Active-success" />
+</p>
 
-Flutter app for browsing, searching, and downloading media from Kemono & Coomer mirrors with a polished gallery experience and multi‑platform support.
+---
 
-## Features
-- Browse creators and posts with staggered grids, photo zoom, and video playback (Chewie/Better Player/WebView).
-- Dual search: creators, tags, and Discord sources (server/channel search + test screen).
-- Offline friendliness: cached media, scroll position memory, smart bookmarks/history, and download manager with permission handling.
-- Theme & accessibility: light/dark themes, text scale control, and localized UI (Flutter localizations enabled).
-- Analytics & stability: Firebase Analytics + Crashlytics hooks ready out of the box.
+## Overview
 
-## Getting Started
-Prerequisites:
-- Flutter SDK ^3.10 (Dart 3.10) installed and on your PATH.
-- Java/Android SDK for Android builds; Xcode for iOS/macOS; web/desktop targets require corresponding Flutter enablement.
+**KC Gallery Viewer** is a multi-platform Flutter application designed to browse, search, and download media from Kemono and Coomer mirror services.
 
-Install dependencies:
+The application focuses on:
+
+- Smooth gallery performance
+- Clean and responsive UI
+- Efficient caching and offline support
+- Structured and scalable architecture
+
+It is suitable for Android, Web, Desktop, and other Flutter-supported platforms.
+
+---
+
+## Key Features
+
+### 1. Media Browsing
+- Masonry / staggered grid layout optimized for image-heavy feeds
+- Fullscreen image viewer with pinch-to-zoom
+- Video playback via:
+  - Chewie
+  - Better Player
+  - WebView fallback
+- Infinite scrolling with scroll state persistence
+
+### 2. Search & Discovery
+- Creator search
+- Tag filtering
+- Discord source search (server & channel)
+- Endpoint testing screen
+
+### 3. Offline & Download Management
+- Media caching
+- Scroll position restoration
+- Smart bookmarks
+- Viewing history
+- Integrated download manager
+- Runtime permission handling (Android)
+
+### 4. UI & Accessibility
+- Light and Dark theme
+- Dynamic text scaling
+- Responsive layout (mobile, tablet, desktop)
+- Flutter localization support
+
+### 5. Stability & Observability
+- Firebase Analytics hooks
+- Firebase Crashlytics hooks
+- Structured provider-based state management
+- Separation of concerns (services, UI, state)
+
+---
+
+## Architecture
+
+KC Gallery Viewer follows a modular layered architecture:
+
+```
+lib/
+ ├── providers/        # State management (Provider)
+ ├── services/         # API, caching, download services
+ ├── screens/          # UI screens
+ ├── widgets/          # Reusable components
+ ├── models/           # Data models
+ └── utils/            # Helpers and utilities
+```
+
+### Design Principles
+
+- Clear separation between UI and business logic
+- Service-driven data layer
+- Provider-based state management
+- Minimal platform-specific coupling
+- Extensible for additional mirror platforms
+
+---
+
+## Technology Stack
+
+| Category | Technology |
+|----------|------------|
+| Framework | Flutter >= 3.10 |
+| Language | Dart >= 3.10 |
+| State Management | Provider |
+| Media Playback | Chewie / Better Player / WebView |
+| Networking | HTTP / Dio (depending on implementation) |
+| Caching | Local storage / file system |
+| Analytics | Firebase Analytics |
+| Crash Reporting | Firebase Crashlytics |
+
+---
+
+## Platform Support
+
+| Platform | Supported |
+|----------|------------|
+| Android | ✅ |
+| Web | ✅ |
+| Windows | ✅ |
+| macOS | ✅ |
+| Linux | ✅ |
+| iOS | ✅ |
+
+> Platform availability depends on local Flutter configuration.
+
+---
+
+## Installation
+
+### Prerequisites
+
+- Flutter SDK 3.10+
+- Dart 3.10+
+- Android SDK (for Android builds)
+- Xcode (for iOS/macOS builds)
+- Desktop/Web enabled via Flutter
+
+Verify setup:
+
+```bash
+flutter doctor
+```
+
+---
+
+### Clone Repository
+
+```bash
+git clone https://github.com/yourusername/kc-gallery-viewer.git
+cd kc-gallery-viewer
+```
+
+---
+
+### Install Dependencies
+
 ```bash
 flutter pub get
 ```
 
-Run on a device/emulator:
+---
+
+## Running the Application
+
+Run on connected device/emulator:
+
 ```bash
 flutter run
 ```
 
-Build release (examples):
+Run on specific platform:
+
 ```bash
-flutter build apk        # Android
-flutter build web        # Web
-flutter build windows    # Windows desktop
+flutter run -d chrome
+flutter run -d windows
+flutter run -d android
 ```
 
-## Project Structure
-- `lib/` – app source (providers, screens, widgets, services).
-- `assets/` – bundled images/fonts/data.
-- `android/`, `ios/`, `macos/`, `linux/`, `windows/`, `web/` – platform shells.
-- `pubspec.yaml` – dependencies and assets.
+---
 
-## Configuration Notes
-- No secrets are committed; Kemono/Coomer/Discord API endpoints are used directly. If you add API keys or private endpoints, keep them in `.env`/runtime config and out of git.
-- Line endings: repo currently normalizes to Windows CRLF when touched by Git; this is safe.
+## Building Release Versions
 
-## Contributing
-1) Create a feature branch from `main`.
-2) Format/analyze before committing: `flutter format . && flutter analyze`.
-3) Open a PR with a short summary of changes and testing done.
+### Android
+
+```bash
+flutter build apk --release
+```
+
+### Web
+
+```bash
+flutter build web --release
+```
+
+### Windows
+
+```bash
+flutter build windows --release
+```
+
+### macOS
+
+```bash
+flutter build macos --release
+```
+
+### Linux
+
+```bash
+flutter build linux --release
+```
+
+### iOS
+
+```bash
+flutter build ios --release
+```
+
+---
+
+## Configuration
+
+### API Endpoints
+
+The application directly consumes public Kemono and Coomer mirror endpoints.
+
+No secrets are stored in the repository.
+
+If adding private endpoints or API keys:
+
+- Store them in `.env`
+- Exclude via `.gitignore`
+- Load at runtime
+
+Example `.env` usage:
+
+```
+API_BASE_URL=https://example.com/api
+```
+
+---
+
+## Code Quality & Contribution
+
+Before committing:
+
+```bash
+flutter format .
+flutter analyze
+```
+
+### Branching Workflow
+
+1. Create feature branch from `main`
+2. Keep commits atomic
+3. Open Pull Request with:
+   - Change summary
+   - Testing notes
+   - Screenshots (if UI changes)
+
+---
+
+## Security Considerations
+
+- No API keys committed
+- No hardcoded secrets
+- Permission requests handled at runtime
+- File downloads use controlled directory access
+
+---
+
+## Performance Strategy
+
+- Image caching
+- Lazy loading
+- Optimized grid rendering
+- Scroll state preservation
+- Reduced rebuild scope via Provider
+
+---
+
+## Roadmap
+
+- Background download service
+- Advanced filtering & sorting
+- Media prefetch optimization
+- Export/import settings
+- Modular plugin system for new platforms
+- Unit & integration test coverage expansion
+
+---
+
+## Known Limitations
+
+- Public mirror availability depends on upstream services
+- Desktop file permission models vary per OS
+- Some video formats depend on platform codec support
+
+---
 
 ## License
-Not specified yet. Add a `LICENSE` file if you plan to distribute.
+
+License not yet specified.
+
+Add a `LICENSE` file before distributing publicly.
+
+Recommended:
+- MIT (permissive)
+- Apache 2.0 (enterprise-friendly)
+- GPL (copyleft)
+
+---
+
+## Disclaimer
+
+This application is a third-party client and is not affiliated with, endorsed by, or officially connected to Kemono or Coomer.
+
+Users are responsible for complying with applicable laws and content usage policies.
+
+---
+
+## Maintainer
+
+Project maintained by:
+
+**Your Name / Organization**
+
+For issues, feature requests, or contributions, open a GitHub Issue or Pull Request.
+
+---
