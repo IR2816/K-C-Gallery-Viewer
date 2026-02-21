@@ -241,6 +241,14 @@ API_BASE_URL=https://example.com/api
 
 ---
 
+## Third-Party Services
+
+- Uses public Kemono & Coomer mirror APIs and optional Discord lookups; this client is not affiliated with any of those services.
+- Users must follow each service’s Terms of Service, respect content ownership, and stay within any published rate limits.
+- Do not commit private tokens or endpoints; keep them in environment variables or secure storage.
+
+---
+
 ## Code Quality & Contribution
 
 Before committing:
@@ -301,14 +309,7 @@ flutter analyze
 
 ## License
 
-License not yet specified.
-
-Add a `LICENSE` file before distributing publicly.
-
-Recommended:
-- MIT (permissive)
-- Apache 2.0 (enterprise-friendly)
-- GPL (copyleft)
+MIT License. See [`LICENSE`](LICENSE) for details.
 
 ---
 
