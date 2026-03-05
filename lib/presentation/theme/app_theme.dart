@@ -1,58 +1,58 @@
 import 'package:flutter/material.dart';
 
-/// Prinsip 8: Desain visual yang "baik" (tanpa mahal)
+/// AppTheme — Social Media Style Design System
 ///
-/// Warna:
-/// - Background: dark / neutral
-/// - Accent: satu warna (biru / ungu)
-/// - Hindari terlalu banyak gradient
-///
-/// Tipografi:
-/// - Title: tegas
-/// - Body: readable
-/// - Jangan lebih dari 2 font
-///
-/// Spacing:
-/// - Padding konsisten
-/// - Card breathing space
-/// - UX enak = mata tidak capek
+/// Primary: Indigo-Purple (#6C63FF)
+/// Accent: Rose (#FF2D55)
+/// Secondary: Teal (#00C6AE)
+/// Dark bg: Near-black (#0A0A0F)
 class AppTheme {
-  // Warna utama
-  static const Color primaryColor = Color(0xFF2196F3); // Blue 600
-  static const Color primaryDarkColor = Color(0xFF1976D2); // Blue 700
-  static const Color primaryLightColor = Color(0xFF64B5F6); // Blue 400
+  // ═══════════════════════════════════════════════
+  // BRAND COLORS
+  // ═══════════════════════════════════════════════
+  static const Color primaryColor = Color(0xFF6C63FF);       // Indigo
+  static const Color primaryDarkColor = Color(0xFF4C46D6);   // Deep indigo
+  static const Color primaryLightColor = Color(0xFF9D97FF);  // Light indigo
+  static const Color accentColor = Color(0xFFFF2D55);        // Rose / like
+  static const Color secondaryAccent = Color(0xFF00C6AE);    // Teal / success
 
-  // Dark theme colors
-  static const Color darkBackgroundColor = Color(0xFF000000); // Pure black
-  static const Color darkSurfaceColor = Color(0xFF1A1A1A); // Very dark grey
-  static const Color darkCardColor = Color(0xFF2A2A2A); // Dark grey
-  static const Color darkElevatedSurfaceColor = Color(
-    0xFF333333,
-  ); // Medium dark grey
+  // ═══════════════════════════════════════════════
+  // DARK THEME SURFACES
+  // ═══════════════════════════════════════════════
+  static const Color darkBackgroundColor = Color(0xFF0A0A0F);
+  static const Color darkSurfaceColor = Color(0xFF141420);
+  static const Color darkCardColor = Color(0xFF1E1E2E);
+  static const Color darkElevatedSurfaceColor = Color(0xFF252538);
+  static const Color darkBorderColor = Color(0xFF2E2E45);
 
-  // Light theme colors
-  static const Color lightBackgroundColor = Color(
-    0xFFF8F9FA,
-  ); // Very light grey
-  static const Color lightSurfaceColor = Color(0xFFFFFFFF); // Pure white
-  static const Color lightCardColor = Color(0xFFFFFFFF); // White
-  static const Color lightElevatedSurfaceColor = Color(
-    0xFFF1F3F4,
-  ); // Light grey
+  // ═══════════════════════════════════════════════
+  // LIGHT THEME SURFACES
+  // ═══════════════════════════════════════════════
+  static const Color lightBackgroundColor = Color(0xFFF5F5FF);
+  static const Color lightSurfaceColor = Color(0xFFFFFFFF);
+  static const Color lightCardColor = Color(0xFFFFFFFF);
+  static const Color lightElevatedSurfaceColor = Color(0xFFF0EFFF);
+  static const Color lightBorderColor = Color(0xFFE8E6FF);
 
-  // Dark theme text colors
-  static const Color darkPrimaryTextColor = Color(0xFFFFFFFF); // Pure white
-  static const Color darkSecondaryTextColor = Color(0xFFB0B0B0); // Medium grey
-  static const Color darkDisabledTextColor = Color(0xFF666666); // Dark grey
-  static const Color darkHintTextColor = Color(0xFF808080); // Grey
+  // ═══════════════════════════════════════════════
+  // DARK TEXT COLORS
+  // ═══════════════════════════════════════════════
+  static const Color darkPrimaryTextColor = Color(0xFFFFFFFF);
+  static const Color darkSecondaryTextColor = Color(0xFF9898B0);
+  static const Color darkDisabledTextColor = Color(0xFF55556A);
+  static const Color darkHintTextColor = Color(0xFF6B6B80);
 
-  // Light theme text colors
-  static const Color lightPrimaryTextColor = Color(0xFF212121); // Dark grey
-  static const Color lightSecondaryTextColor = Color(0xFF757575); // Medium grey
-  static const Color lightDisabledTextColor = Color(0xFFBDBDBD); // Light grey
-  static const Color lightHintTextColor = Color(0xFF9E9E9E); // Grey
+  // ═══════════════════════════════════════════════
+  // LIGHT TEXT COLORS
+  // ═══════════════════════════════════════════════
+  static const Color lightPrimaryTextColor = Color(0xFF0D0D1A);
+  static const Color lightSecondaryTextColor = Color(0xFF6B6B80);
+  static const Color lightDisabledTextColor = Color(0xFFBBBBCC);
+  static const Color lightHintTextColor = Color(0xFF9898B0);
 
-  // Backward compatibility - default to dark theme colors for existing code
+  // ═══════════════════════════════════════════════
+  // BACKWARD COMPAT (default = dark)
+  // ═══════════════════════════════════════════════
   static const Color primaryTextColor = darkPrimaryTextColor;
   static const Color secondaryTextColor = darkSecondaryTextColor;
   static const Color backgroundColor = darkBackgroundColor;
@@ -68,28 +68,59 @@ class AppTheme {
   static const TextStyle buttonTextStyle = darkButtonTextStyle;
   static const TextStyle tabTextStyle = darkTabTextStyle;
 
-  // Status colors
-  static const Color successColor = Color(0xFF4CAF50); // Green
-  static const Color warningColor = Color(0xFFFF9800); // Orange
-  static const Color errorColor = Color(0xFFF44336); // Red
-  static const Color infoColor = Color(0xFF2196F3); // Blue
+  // ═══════════════════════════════════════════════
+  // STATUS COLORS
+  // ═══════════════════════════════════════════════
+  static const Color successColor = Color(0xFF00C6AE);
+  static const Color warningColor = Color(0xFFFFB300);
+  static const Color errorColor = Color(0xFFFF2D55);
+  static const Color infoColor = Color(0xFF6C63FF);
 
-  // Service colors (untuk badges dan indicators)
+  // ═══════════════════════════════════════════════
+  // SERVICE COLORS
+  // ═══════════════════════════════════════════════
   static const Map<String, Color> serviceColors = {
-    'fanbox': Color(0xFF2196F3), // Blue
-    'patreon': Color(0xFFFF9800), // Orange
-    'fantia': Color(0xFF9C27B0), // Purple
-    'afdian': Color(0xFF4CAF50), // Green
-    'boosty': Color(0xFFF44336), // Red
-    'kemono': Color(0xFF2196F3), // Blue
-    'coomer': Color(0xFF9C27B0), // Purple
+    'fanbox': Color(0xFF0099E5),
+    'patreon': Color(0xFFFF424D),
+    'fantia': Color(0xFF845EC2),
+    'afdian': Color(0xFF1DB954),
+    'boosty': Color(0xFFFF6B35),
+    'kemono': Color(0xFF6C63FF),
+    'coomer': Color(0xFFFF2D55),
+    'onlyfans': Color(0xFF00AFF0),
+    'fansly': Color(0xFF1A9BE0),
+    'candfans': Color(0xFFFF79A8),
+    'gumroad': Color(0xFF36A9AE),
+    'subscribestar': Color(0xFF00B4D8),
+    'dlsite': Color(0xFF6C2BD9),
+    'discord': Color(0xFF5865F2),
   };
 
-  // Gradients (minimal usage)
+  // ═══════════════════════════════════════════════
+  // GRADIENTS
+  // ═══════════════════════════════════════════════
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [primaryColor, primaryDarkColor],
+  );
+
+  static const LinearGradient accentGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFF2D55), Color(0xFFFF6B8A)],
+  );
+
+  static const LinearGradient storyRingGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primaryColor, accentColor, Color(0xFFFFB300)],
+  );
+
+  static const LinearGradient navBarGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primaryColor, Color(0xFF9B5DE5)],
   );
 
   static const LinearGradient darkBackgroundGradient = LinearGradient(
@@ -104,26 +135,37 @@ class AppTheme {
     colors: [lightBackgroundColor, lightSurfaceColor],
   );
 
-  // Dark theme text styles
+  static const LinearGradient cardOverlayGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [Colors.transparent, Color(0xCC000000)],
+  );
+
+  // ═══════════════════════════════════════════════
+  // DARK TEXT STYLES
+  // ═══════════════════════════════════════════════
   static const TextStyle darkHeading1Style = TextStyle(
     color: darkPrimaryTextColor,
     fontSize: 32,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w800,
     height: 1.2,
+    letterSpacing: -0.5,
   );
 
   static const TextStyle darkHeading2Style = TextStyle(
     color: darkPrimaryTextColor,
     fontSize: 24,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w700,
     height: 1.2,
+    letterSpacing: -0.3,
   );
 
   static const TextStyle darkHeading3Style = TextStyle(
     color: darkPrimaryTextColor,
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    height: 1.2,
+    height: 1.3,
+    letterSpacing: -0.2,
   );
 
   static const TextStyle darkTitleStyle = TextStyle(
@@ -168,26 +210,31 @@ class AppTheme {
     height: 1.2,
   );
 
-  // Light theme text styles
+  // ═══════════════════════════════════════════════
+  // LIGHT TEXT STYLES
+  // ═══════════════════════════════════════════════
   static const TextStyle lightHeading1Style = TextStyle(
     color: lightPrimaryTextColor,
     fontSize: 32,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w800,
     height: 1.2,
+    letterSpacing: -0.5,
   );
 
   static const TextStyle lightHeading2Style = TextStyle(
     color: lightPrimaryTextColor,
     fontSize: 24,
-    fontWeight: FontWeight.bold,
+    fontWeight: FontWeight.w700,
     height: 1.2,
+    letterSpacing: -0.3,
   );
 
   static const TextStyle lightHeading3Style = TextStyle(
     color: lightPrimaryTextColor,
     fontSize: 20,
     fontWeight: FontWeight.w600,
-    height: 1.2,
+    height: 1.3,
+    letterSpacing: -0.2,
   );
 
   static const TextStyle lightTitleStyle = TextStyle(
@@ -232,7 +279,9 @@ class AppTheme {
     height: 1.2,
   );
 
-  // Spacing constants
+  // ═══════════════════════════════════════════════
+  // SPACING & SIZING
+  // ═══════════════════════════════════════════════
   static const double xsPadding = 4.0;
   static const double smPadding = 8.0;
   static const double mdPadding = 16.0;
@@ -248,173 +297,135 @@ class AppTheme {
   // Border radius
   static const double xsRadius = 4.0;
   static const double smRadius = 8.0;
-  static const double mdRadius = 12.0;
-  static const double lgRadius = 16.0;
-  static const double xlRadius = 24.0;
+  static const double mdRadius = 16.0;
+  static const double lgRadius = 24.0;
+  static const double xlRadius = 32.0;
+  static const double pillRadius = 50.0;
 
   // Elevations
   static const double noElevation = 0.0;
   static const double smElevation = 2.0;
-  static const double mdElevation = 4.0;
-  static const double lgElevation = 8.0;
+  static const double mdElevation = 8.0;
+  static const double lgElevation = 16.0;
 
   // Animation durations
   static const Duration fastDuration = Duration(milliseconds: 150);
   static const Duration normalDuration = Duration(milliseconds: 300);
   static const Duration slowDuration = Duration(milliseconds: 500);
 
-  // DYNAMIC THEME HELPERS - Get colors based on current theme
-  // (Using existing methods at bottom of file for consistency)
-
-  // DYNAMIC TEXT STYLE HELPERS
-  static TextStyle getTitleStyle(BuildContext context) {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark
-        ? darkTitleStyle
-        : lightTitleStyle;
-  }
-
-  static TextStyle getBodyStyle(BuildContext context) {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark ? darkBodyStyle : lightBodyStyle;
-  }
-
-  static TextStyle getCaptionStyle(BuildContext context) {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark
-        ? darkCaptionStyle
-        : lightCaptionStyle;
-  }
-
-  static TextStyle getSubtitleStyle(BuildContext context) {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark
-        ? darkSubtitleStyle
-        : lightSubtitleStyle;
-  }
-
-  static TextStyle getButtonTextStyle(BuildContext context) {
-    final theme = Theme.of(context);
-    return theme.brightness == Brightness.dark
-        ? darkButtonTextStyle
-        : lightButtonTextStyle;
-  }
-
-  // Get theme data
+  // ═══════════════════════════════════════════════
+  // THEME DATA
+  // ═══════════════════════════════════════════════
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: const ColorScheme.dark(
         primary: primaryColor,
-        secondary: primaryColor,
+        secondary: accentColor,
+        tertiary: secondaryAccent,
         surface: darkSurfaceColor,
         error: errorColor,
-        onPrimary: darkPrimaryTextColor,
-        onSecondary: darkPrimaryTextColor,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
         onSurface: darkPrimaryTextColor,
-        onError: darkPrimaryTextColor,
+        onError: Colors.white,
       ),
+      scaffoldBackgroundColor: darkBackgroundColor,
 
-      // App bar theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: darkSurfaceColor,
+        backgroundColor: Colors.transparent,
         foregroundColor: darkPrimaryTextColor,
-        elevation: noElevation,
-        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
         titleTextStyle: darkHeading3Style,
       ),
 
-      // Card theme
       cardTheme: CardThemeData(
-        elevation: 4,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+          side: BorderSide(color: darkBorderColor, width: 1),
         ),
-        shadowColor: Color.fromRGBO(0, 0, 0, 0.1),
         color: darkCardColor,
       ),
 
-      // Elevated button theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
-          foregroundColor: darkPrimaryTextColor,
-          elevation: smElevation,
+          foregroundColor: Colors.white,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(smRadius)),
+            borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
           ),
-          padding: EdgeInsets.symmetric(
-            horizontal: mdPadding,
-            vertical: smPadding,
+          padding: const EdgeInsets.symmetric(
+            horizontal: lgPadding,
+            vertical: smPadding + 4,
           ),
           textStyle: darkButtonTextStyle,
         ),
       ),
 
-      // Text button theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(smRadius)),
           ),
-          padding: EdgeInsets.symmetric(
-            horizontal: mdPadding,
-            vertical: smPadding,
-          ),
           textStyle: darkButtonTextStyle,
         ),
       ),
 
-      // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: darkSurfaceColor,
+        fillColor: darkCardColor,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(mdRadius)),
-          borderSide: const BorderSide(color: darkSurfaceColor),
+          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderSide: BorderSide(color: darkBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(mdRadius)),
-          borderSide: BorderSide(color: darkCardColor),
+          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderSide: BorderSide(color: darkBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(mdRadius)),
-          borderSide: const BorderSide(color: primaryColor),
+          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         hintStyle: darkCaptionStyle,
         labelStyle: darkCaptionStyle,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: mdPadding,
-          vertical: smPadding,
+          vertical: smPadding + 4,
         ),
       ),
 
-      // Bottom navigation bar theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: darkSurfaceColor,
         selectedItemColor: primaryColor,
         unselectedItemColor: darkSecondaryTextColor,
         type: BottomNavigationBarType.fixed,
-        elevation: mdElevation,
+        elevation: 0,
         selectedLabelStyle: darkTabTextStyle,
         unselectedLabelStyle: darkTabTextStyle,
       ),
 
-      // Tab bar theme
       tabBarTheme: const TabBarThemeData(
-        labelColor: darkSecondaryTextColor,
+        labelColor: primaryColor,
         unselectedLabelColor: darkSecondaryTextColor,
         indicatorColor: primaryColor,
         labelStyle: darkTabTextStyle,
         unselectedLabelStyle: darkTabTextStyle,
       ),
 
-      // Icon theme
       iconTheme: const IconThemeData(color: darkSecondaryTextColor, size: 24),
 
-      // Text theme
+      dividerTheme: const DividerThemeData(
+        color: darkBorderColor,
+        thickness: 1,
+        space: 1,
+      ),
+
       textTheme: const TextTheme(
         displayLarge: darkHeading1Style,
         displayMedium: darkHeading2Style,
@@ -437,114 +448,110 @@ class AppTheme {
       brightness: Brightness.light,
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
-        secondary: primaryColor,
+        secondary: accentColor,
+        tertiary: secondaryAccent,
         surface: lightSurfaceColor,
         error: errorColor,
-        onPrimary: lightPrimaryTextColor,
-        onSecondary: lightPrimaryTextColor,
+        onPrimary: Colors.white,
+        onSecondary: Colors.white,
         onSurface: lightPrimaryTextColor,
-        onError: lightPrimaryTextColor,
+        onError: Colors.white,
       ),
+      scaffoldBackgroundColor: lightBackgroundColor,
 
-      // App bar theme
       appBarTheme: const AppBarTheme(
-        backgroundColor: lightSurfaceColor,
+        backgroundColor: Colors.transparent,
         foregroundColor: lightPrimaryTextColor,
-        elevation: noElevation,
-        centerTitle: true,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: false,
         titleTextStyle: lightHeading3Style,
       ),
 
-      // Card theme
       cardTheme: CardThemeData(
-        elevation: 4,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(16)),
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+          side: BorderSide(color: lightBorderColor, width: 1),
         ),
-        shadowColor: Color.fromRGBO(0, 0, 0, 0.1),
         color: lightCardColor,
       ),
 
-      // Elevated button theme
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
-          foregroundColor: lightPrimaryTextColor,
-          elevation: smElevation,
+          foregroundColor: Colors.white,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(smRadius)),
+            borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
           ),
-          padding: EdgeInsets.symmetric(
-            horizontal: mdPadding,
-            vertical: smPadding,
+          padding: const EdgeInsets.symmetric(
+            horizontal: lgPadding,
+            vertical: smPadding + 4,
           ),
           textStyle: lightButtonTextStyle,
         ),
       ),
 
-      // Text button theme
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(smRadius)),
           ),
-          padding: EdgeInsets.symmetric(
-            horizontal: mdPadding,
-            vertical: smPadding,
-          ),
           textStyle: lightButtonTextStyle,
         ),
       ),
 
-      // Input decoration theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: lightSurfaceColor,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(mdRadius)),
-          borderSide: const BorderSide(color: lightSurfaceColor),
+          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderSide: BorderSide(color: lightBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(mdRadius)),
-          borderSide: BorderSide(color: lightElevatedSurfaceColor),
+          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderSide: BorderSide(color: lightBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(mdRadius)),
-          borderSide: const BorderSide(color: primaryColor),
+          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         hintStyle: lightCaptionStyle,
         labelStyle: lightCaptionStyle,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: mdPadding,
-          vertical: smPadding,
+          vertical: smPadding + 4,
         ),
       ),
 
-      // Bottom navigation bar theme
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: lightSurfaceColor,
         selectedItemColor: primaryColor,
         unselectedItemColor: lightSecondaryTextColor,
         type: BottomNavigationBarType.fixed,
-        elevation: mdElevation,
+        elevation: 0,
         selectedLabelStyle: lightTabTextStyle,
         unselectedLabelStyle: lightTabTextStyle,
       ),
 
-      // Tab bar theme
       tabBarTheme: const TabBarThemeData(
-        labelColor: lightSecondaryTextColor,
+        labelColor: primaryColor,
         unselectedLabelColor: lightSecondaryTextColor,
         indicatorColor: primaryColor,
         labelStyle: lightTabTextStyle,
         unselectedLabelStyle: lightTabTextStyle,
       ),
 
-      // Icon theme
       iconTheme: const IconThemeData(color: lightSecondaryTextColor, size: 24),
 
-      // Text theme
+      dividerTheme: const DividerThemeData(
+        color: lightBorderColor,
+        thickness: 1,
+        space: 1,
+      ),
+
       textTheme: const TextTheme(
         displayLarge: lightHeading1Style,
         displayMedium: lightHeading2Style,
@@ -561,12 +568,13 @@ class AppTheme {
     );
   }
 
-  // Helper methods
+  // ═══════════════════════════════════════════════
+  // HELPER METHODS
+  // ═══════════════════════════════════════════════
   static Color getServiceColor(String service) {
     return serviceColors[service.toLowerCase()] ?? primaryColor;
   }
 
-  // Theme-aware color helpers untuk backward compatibility
   static Color getSurfaceColor(BuildContext context) {
     return Theme.of(context).colorScheme.surface;
   }
@@ -576,7 +584,7 @@ class AppTheme {
   }
 
   static Color getBackgroundColor(BuildContext context) {
-    return Theme.of(context).colorScheme.surface;
+    return Theme.of(context).scaffoldBackgroundColor;
   }
 
   static Color getOnBackgroundColor(BuildContext context) {
@@ -599,7 +607,6 @@ class AppTheme {
     return Theme.of(context).colorScheme.error;
   }
 
-  // Helper untuk opacity colors
   static Color getOnSurfaceWithOpacity(BuildContext context, double opacity) {
     return Theme.of(context).colorScheme.onSurface.withValues(alpha: opacity);
   }
@@ -609,12 +616,42 @@ class AppTheme {
   }
 
   static bool isLightColor(Color color) {
-    final luminance = color.computeLuminance();
-    return luminance > 0.5;
+    return color.computeLuminance() > 0.5;
   }
 
   static Color getContrastColor(Color backgroundColor) {
     return isLightColor(backgroundColor) ? Colors.black : Colors.white;
+  }
+
+  // Dynamic text styles
+  static TextStyle getTitleStyle(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkTitleStyle
+        : lightTitleStyle;
+  }
+
+  static TextStyle getBodyStyle(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkBodyStyle
+        : lightBodyStyle;
+  }
+
+  static TextStyle getCaptionStyle(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkCaptionStyle
+        : lightCaptionStyle;
+  }
+
+  static TextStyle getSubtitleStyle(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkSubtitleStyle
+        : lightSubtitleStyle;
+  }
+
+  static TextStyle getButtonTextStyle(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkButtonTextStyle
+        : lightButtonTextStyle;
   }
 
   static LinearGradient getCardGradient() {
@@ -635,16 +672,25 @@ class AppTheme {
 
   static BoxShadow getCardShadow() {
     return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.1),
-      blurRadius: 8,
-      offset: const Offset(0, 2),
+      color: Colors.black.withValues(alpha: 0.15),
+      blurRadius: 20,
+      offset: const Offset(0, 4),
     );
   }
 
   static BoxShadow getElevatedShadow() {
     return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.2),
-      blurRadius: 16,
+      color: primaryColor.withValues(alpha: 0.25),
+      blurRadius: 24,
+      offset: const Offset(0, 8),
+    );
+  }
+
+  static BoxShadow getGlowShadow(Color color) {
+    return BoxShadow(
+      color: color.withValues(alpha: 0.35),
+      blurRadius: 20,
+      spreadRadius: -4,
       offset: const Offset(0, 4),
     );
   }

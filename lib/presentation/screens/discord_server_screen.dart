@@ -102,13 +102,19 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
                 ),
                 autofocus: true,
               )
-            : Text(
-                'Kemono Discord',
-                style: AppTheme.getTitleStyle(
-                  context,
-                ).copyWith(color: AppTheme.getOnBackgroundColor(context)),
+            : ShaderMask(
+                shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+                child: const Text(
+                  'Kemono Discord',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 26,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
               ),
-        backgroundColor: AppTheme.getSurfaceColor(context),
+        backgroundColor: AppTheme.getBackgroundColor(context),
         foregroundColor: AppTheme.getOnSurfaceColor(context),
         actions: [
           // Search/Cancel button

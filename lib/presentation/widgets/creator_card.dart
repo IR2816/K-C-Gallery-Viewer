@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/creator.dart';
 import '../providers/creators_provider.dart';
+import '../theme/app_theme.dart';
 
+/// CreatorCard — Social Media Profile Card Style
+///
+/// Layout:
+/// ┌────────────────────────────────────┐
+/// │  [Story-ring Avatar]  Name          │
+/// │                       @service ❤️  │
+/// │  ID • Updated date                  │
+/// └────────────────────────────────────┘
 class CreatorCard extends StatefulWidget {
   final Creator creator;
   final VoidCallback? onTap;
@@ -25,238 +35,271 @@ class CreatorCard extends StatefulWidget {
   State<CreatorCard> createState() => _CreatorCardState();
 }
 
-class _CreatorCardState extends State<CreatorCard>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
-  bool _isHovered = false;
+class _CreatorCardState extends State<CreatorCard> with SingleTickerProviderStateMixin {
+  late AnimationController _animController;
+  late Animation<double> _scaleAnim;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 180),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
-    );
-    _fadeAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    _scaleAnim = Tween<double>(begin: 1.0, end: 0.97).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
     );
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _animController.dispose();
     super.dispose();
   }
 
+  String _avatarUrl() {
+    final domain = (widget.creator.service == 'fansly' ||
+            widget.creator.service == 'onlyfans' ||
+            widget.creator.service == 'candfans')
+        ? 'https://coomer.st'
+        : 'https://kemono.cr';
+    return '$domain/data/avatars/${widget.creator.service}/${widget.creator.id}/avatar.jpg';
+  }
+
   String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year}';
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 365) return '${(diff.inDays / 365).floor()}y ago';
+    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    return 'Today';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final serviceColor = AppTheme.getServiceColor(widget.creator.service);
+
     return Consumer<CreatorsProvider>(
       builder: (context, provider, _) {
-        final isFavorite = provider.favoriteCreators.contains(
-          widget.creator.id,
-        );
+        final isFavorite = provider.favoriteCreators.contains(widget.creator.id);
 
-        return AnimatedBuilder(
-          animation: _animationController,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _scaleAnimation.value,
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: MouseRegion(
-                  onEnter: (_) => setState(() => _isHovered = true),
-                  onExit: (_) => setState(() => _isHovered = false),
-                  child: GestureDetector(
-                    onTap: widget.onTap,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Theme.of(context).cardColor,
-                            Theme.of(context).cardColor.withValues(alpha: 0.8),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 
-                              _isHovered ? 0.2 : 0.1,
-                            ),
-                            blurRadius: _isHovered ? 20 : 12,
-                            offset: const Offset(0, 8),
-                          ),
-                          if (_isHovered)
-                            BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).primaryColor.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                        ],
-                        border: Border.all(
-                          color: _isHovered
-                              ? Theme.of(context).primaryColor.withValues(alpha: 0.5)
-                              : Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                          width: _isHovered ? 2 : 1,
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        widget.creator.name,
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Theme.of(
-                                            context,
-                                          ).textTheme.bodyLarge?.color,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        widget.creator.service,
-                                        style: TextStyle(
-                                          color: Theme.of(context).primaryColor,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ],
+        return GestureDetector(
+          onTapDown: (_) => _animController.forward(),
+          onTapUp: (_) => _animController.reverse(),
+          onTapCancel: () => _animController.reverse(),
+          onTap: widget.onTap,
+          child: AnimatedBuilder(
+            animation: _scaleAnim,
+            builder: (context, child) => Transform.scale(
+              scale: _scaleAnim.value,
+              child: child,
+            ),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkCardColor : AppTheme.lightCardColor,
+                borderRadius: BorderRadius.circular(AppTheme.mdRadius),
+                border: Border.all(
+                  color: isDark ? AppTheme.darkBorderColor : AppTheme.lightBorderColor,
+                  width: 1,
+                ),
+                boxShadow: [AppTheme.getCardShadow()],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    // Story-ring avatar
+                    _buildAvatar(serviceColor),
+
+                    const SizedBox(width: 14),
+
+                    // Name + service info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  widget.creator.name,
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: isDark
+                                        ? AppTheme.darkPrimaryTextColor
+                                        : AppTheme.lightPrimaryTextColor,
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(width: 12),
+                              ),
+                              if (widget.experimentalBadge)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8,
-                                    vertical: 4,
-                                  ),
+                                  margin: const EdgeInsets.only(left: 6),
+                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(
-                                      context,
-                                    ).primaryColor.withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: AppTheme.warningColor.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                                   ),
-                                  child: IconButton(
-                                    icon: Icon(
-                                      isFavorite
-                                          ? Icons.favorite
-                                          : Icons.favorite_border,
-                                      color: isFavorite
-                                          ? Theme.of(context).primaryColor
-                                          : Theme.of(
-                                              context,
-                                            ).iconTheme.color?.withValues(alpha: 0.7),
-                                      size: 18,
-                                    ),
-                                    onPressed: widget.onFavorite,
-                                    style: IconButton.styleFrom(
-                                      backgroundColor: Colors.transparent,
-                                      shadowColor: Colors.transparent,
-                                      padding: const EdgeInsets.all(8),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.people,
-                                  size: 16,
-                                  color: Theme.of(context).disabledColor,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
                                   child: Text(
-                                    widget.creator.id,
+                                    'EXP',
                                     style: TextStyle(
-                                      color: Theme.of(context).disabledColor,
-                                      fontSize: 12,
-                                      fontFamily: 'monospace',
+                                      color: AppTheme.warningColor,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ),
-                                if (widget.experimentalBadge)
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(4),
-                                      border: Border.all(
-                                        color: Colors.orange.withValues(alpha: 0.3),
-                                      ),
-                                    ),
-                                    child: Text(
-                                      'EXPERIMENTAL',
-                                      style: TextStyle(
-                                        color: Colors.orange,
-                                        fontSize: 8,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+
+                          // Service badge + updated
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: serviceColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                                ),
+                                child: Text(
+                                  widget.creator.service.toUpperCase(),
+                                  style: TextStyle(
+                                    color: serviceColor,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w700,
                                   ),
-                              ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.update_rounded,
+                                size: 11,
+                                color: isDark
+                                    ? AppTheme.darkSecondaryTextColor
+                                    : AppTheme.lightSecondaryTextColor,
+                              ),
+                              const SizedBox(width: 3),
+                              Text(
+                                _formatDate(
+                                  DateTime.fromMillisecondsSinceEpoch(
+                                    widget.creator.updated * 1000,
+                                  ),
+                                ),
+                                style: TextStyle(
+                                  color: isDark
+                                      ? AppTheme.darkSecondaryTextColor
+                                      : AppTheme.lightSecondaryTextColor,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          // ID row
+                          Text(
+                            'ID: ${widget.creator.id}',
+                            style: TextStyle(
+                              color: isDark
+                                  ? AppTheme.darkDisabledTextColor
+                                  : AppTheme.lightDisabledTextColor,
+                              fontSize: 10,
+                              fontFamily: 'monospace',
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today,
-                                  size: 16,
-                                  color: Theme.of(context).disabledColor,
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    'Updated: ${_formatDate(DateTime.fromMillisecondsSinceEpoch(widget.creator.updated * 1000))}',
-                                    style: TextStyle(
-                                      color: Theme.of(context).disabledColor,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Favorite button
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: widget.onFavorite,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isFavorite
+                              ? AppTheme.accentColor.withValues(alpha: 0.12)
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          color: isFavorite ? AppTheme.accentColor : AppTheme.darkSecondaryTextColor,
+                          size: 22,
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAvatar(Color serviceColor) {
+    return Container(
+      width: 54,
+      height: 54,
+      padding: const EdgeInsets.all(2.5),
+      decoration: const BoxDecoration(
+        gradient: AppTheme.storyRingGradient,
+        shape: BoxShape.circle,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppTheme.darkElevatedSurfaceColor,
+        ),
+        padding: const EdgeInsets.all(2),
+        child: ClipOval(
+          child: CachedNetworkImage(
+            imageUrl: _avatarUrl(),
+            fit: BoxFit.cover,
+            placeholder: (_, __) => Container(
+              color: AppTheme.darkElevatedSurfaceColor,
+              child: Center(
+                child: Text(
+                  widget.creator.name.isNotEmpty
+                      ? widget.creator.name[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
-            );
-          },
-        );
-      },
+            ),
+            errorWidget: (_, __, ___) => Container(
+              color: AppTheme.darkElevatedSurfaceColor,
+              child: Center(
+                child: Text(
+                  widget.creator.name.isNotEmpty
+                      ? widget.creator.name[0].toUpperCase()
+                      : '?',
+                  style: const TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

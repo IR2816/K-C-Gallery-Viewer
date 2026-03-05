@@ -10,10 +10,22 @@ import '../../domain/entities/api_source.dart';
 import '../providers/settings_provider.dart';
 
 // Theme
+import '../theme/app_theme.dart';
 
 // Widgets
 import '../../widgets/optimized_media_loader.dart';
 
+/// PostCard — Social Media Style
+///
+/// Layout:
+/// ┌──────────────────────────────┐
+/// │ [Avatar] Creator  ●  Service │ ← header row
+/// │                              │
+/// │      [Thumbnail image]       │ ← full-width media
+/// │                              │
+/// │ 🔖 Save  📷 2 IMG  📅 2d ago │ ← action row
+/// │ Post title (caption)         │
+/// └──────────────────────────────┘
 class PostCard extends StatelessWidget {
   final Post post;
   final VoidCallback? onTap;
@@ -32,389 +44,332 @@ class PostCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final creatorSection = onCreatorTap != null
-        ? Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            child: InkWell(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? AppTheme.darkCardColor : AppTheme.lightCardColor;
+    final borderColor = isDark ? AppTheme.darkBorderColor : AppTheme.lightBorderColor;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(AppTheme.mdRadius),
+        border: Border.all(color: borderColor, width: 1),
+        boxShadow: [AppTheme.getCardShadow()],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.mdRadius),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Creator Header Row ──────────────────
+            _buildCreatorHeader(context),
+
+            // ── Thumbnail ──────────────────────────
+            _buildThumbnail(context),
+
+            // ── Actions + Caption ──────────────────
+            _buildFooter(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreatorHeader(BuildContext context) {
+    final serviceColor = AppTheme.getServiceColor(post.service);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          // Avatar circle
+          GestureDetector(
+            onTap: onCreatorTap,
+            child: Hero(
+              tag: 'creator-${post.user}',
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [AppTheme.primaryColor, AppTheme.accentColor],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                padding: const EdgeInsets.all(2),
+                child: ClipOval(
+                  child: CachedNetworkImage(
+                    imageUrl: _getCreatorAvatarUrl(),
+                    fit: BoxFit.cover,
+                    placeholder: (_, __) => Container(
+                      color: AppTheme.darkElevatedSurfaceColor,
+                      child: const Icon(Icons.person, size: 16, color: Colors.white70),
+                    ),
+                    errorWidget: (_, __, ___) => Container(
+                      color: AppTheme.darkElevatedSurfaceColor,
+                      child: const Icon(Icons.person, size: 16, color: Colors.white70),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Creator name
+          Expanded(
+            child: GestureDetector(
               onTap: onCreatorTap,
-              borderRadius: BorderRadius.circular(8),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Creator avatar
-                  Hero(
-                    tag: 'creator-${post.user}',
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                      ),
-                      child: ClipOval(
-                        child: CachedNetworkImage(
-                          imageUrl: _getCreatorAvatarUrl(),
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: Colors.transparent,
-                            child: Icon(
-                              Icons.person,
-                              size: 12,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            color: Colors.transparent,
-                            child: Icon(
-                              Icons.person,
-                              size: 12,
-                              color: Theme.of(context).primaryColor,
-                            ),
-                          ),
-                        ),
-                      ),
+                  Text(
+                    _getCreatorDisplayName(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.darkPrimaryTextColor,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(width: 6),
-                  // Creator name
-                  Flexible(
-                    child: Text(
-                      _getCreatorDisplayName(),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                  Text(
+                    _formatDate(post.published),
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppTheme.darkSecondaryTextColor,
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 10,
-                    color: Theme.of(context).primaryColor.withValues(alpha: 0.6),
                   ),
                 ],
               ),
             ),
-          )
-        : const SizedBox.shrink();
+          ),
 
-    final details = Padding(
-      padding: EdgeInsets.all(8), // Reduced padding for compact grid
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (onCreatorTap != null) ...[
-            creatorSection,
-            const SizedBox(height: 4),
-          ],
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  post.title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ), // Smaller font for grid
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (onSave != null)
-                Tooltip(
-                  message: post.saved ? 'Remove from saved' : 'Save post',
-                  child: IconButton(
-                    icon: Icon(
-                      post.saved ? Icons.bookmark : Icons.bookmark_border,
-                      color: post.saved ? Colors.blue : null,
-                      size: 20, // Smaller icon for grid
-                    ),
-                    onPressed: onSave,
-                    padding:
-                        EdgeInsets.zero, // Remove padding for compact layout
-                    constraints: BoxConstraints(), // Remove constraints
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(height: 2), // Reduced spacing
-          Text(
-            '${post.service} • ${_formatDate(post.published)}',
-            style: TextStyle(fontSize: 11, color: Colors.grey), // Smaller font
-          ),
-          if (post.tags.isNotEmpty) ...[
-            SizedBox(height: 4),
-            Wrap(
-              spacing: 4,
-              children: post.tags
-                  .take(3)
-                  .map(
-                    (tag) => Chip(
-                      label: Text(tag, style: TextStyle(fontSize: 10)),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  )
-                  .toList(),
+          // Service badge pill
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: serviceColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+              border: Border.all(color: serviceColor.withValues(alpha: 0.4), width: 1),
             ),
-          ],
+            child: Text(
+              post.service.toUpperCase(),
+              style: TextStyle(
+                color: serviceColor,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
         ],
       ),
     );
+  }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final detailsChild = constraints.hasBoundedHeight
-            ? Expanded(child: details)
-            : details;
+  Widget _buildThumbnail(BuildContext context) {
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, _) {
+        final thumbnailUrl = post.getBestThumbnailUrl(apiSource);
+        return AspectRatio(
+          aspectRatio: 4 / 3,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Image
+              thumbnailUrl != null
+                  ? FallbackImage(
+                      imagePath: thumbnailUrl,
+                      fit: BoxFit.cover,
+                      isThumbnail: true,
+                      apiSource: apiSource.name,
+                      errorWidget: _buildImagePlaceholder(),
+                    )
+                  : _buildImagePlaceholder(),
 
-        return Card(
-          margin: EdgeInsets.zero, // Remove external margins for grid layout
-          child: InkWell(
-            onTap: onTap,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Consumer<SettingsProvider>(
-                  builder: (context, settings, _) {
-                    // Get best thumbnail based on content type
-                    final thumbnailUrl = post.getBestThumbnailUrl(apiSource);
-
-                    return AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Thumbnail image
-                          thumbnailUrl != null
-                              ? SizedBox(
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  child: FallbackImage(
-                                    imagePath: thumbnailUrl,
-                                    fit: BoxFit.cover,
-                                    isThumbnail: true,
-                                    apiSource: apiSource.name,
-                                    errorWidget: Container(
-                                      width: double.infinity,
-                                      height: double.infinity,
-                                      color: Colors.grey[300],
-                                      child: Center(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.error_outline,
-                                              color: Colors.grey[600],
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              'Failed to load',
-                                              style: TextStyle(
-                                                color: Colors.grey[600],
-                                                fontSize: 10,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  color: Colors.black,
-                                  child: Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      color: Colors.grey,
-                                      size: 48,
-                                    ),
-                                  ),
-                                ),
-
-                          // Video indicator overlay
-                          if (post.hasVideo && !post.hasImage)
-                            Positioned.fill(
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.black.withValues(alpha: 0.3),
-                                      Colors.black.withValues(alpha: 0.1),
-                                    ],
-                                  ),
-                                ),
-                                child: Center(
-                                  child: Container(
-                                    padding: EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.6),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.play_arrow,
-                                      color: Colors.white,
-                                      size: 32,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                          // Content type indicators with media count
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (post.hasVideo && !post.hasImage)
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withValues(alpha: 0.8),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.videocam,
-                                          color: Colors.white,
-                                          size: 12,
-                                        ),
-                                        SizedBox(width: 2),
-                                        Text(
-                                          'VIDEO ${post.videoCount}',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                if (post.hasImage && post.hasVideo)
-                                  SizedBox(width: 4),
-                                if (post.hasImage && post.hasVideo)
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue.withValues(alpha: 0.8),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.photo_library,
-                                          color: Colors.white,
-                                          size: 12,
-                                        ),
-                                        SizedBox(width: 2),
-                                        Text(
-                                          '${post.imageCount}+${post.videoCount}',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                if (post.hasImage && !post.hasVideo)
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.withValues(alpha: 0.8),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.image,
-                                          color: Colors.white,
-                                          size: 12,
-                                        ),
-                                        SizedBox(width: 2),
-                                        Text(
-                                          '${post.imageCount} IMG',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 8,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+              // Gradient overlay bottom
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.35),
+                      ],
+                      stops: const [0, 0.55, 1],
+                    ),
+                  ),
                 ),
-                detailsChild,
-              ],
-            ),
+              ),
+
+              // Media count badge (top-right)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: _buildMediaBadges(),
+              ),
+
+              // Video play button
+              if (post.hasVideo && !post.hasImage)
+                Center(
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white30, width: 1.5),
+                    ),
+                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 30),
+                  ),
+                ),
+            ],
           ),
         );
       },
     );
   }
 
+  Widget _buildImagePlaceholder() {
+    return Container(
+      color: AppTheme.darkElevatedSurfaceColor,
+      child: const Center(
+        child: Icon(Icons.image_not_supported_outlined, color: AppTheme.darkSecondaryTextColor, size: 40),
+      ),
+    );
+  }
+
+  Widget _buildMediaBadges() {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (post.hasVideo && !post.hasImage)
+          _badge(Icons.videocam_rounded, '${post.videoCount}', Colors.red),
+        if (post.hasImage && post.hasVideo) ...[
+          _badge(Icons.photo_library_rounded, '${post.imageCount}', AppTheme.primaryColor),
+          const SizedBox(width: 4),
+          _badge(Icons.videocam_rounded, '${post.videoCount}', Colors.red),
+        ],
+        if (post.hasImage && !post.hasVideo)
+          _badge(Icons.photo_library_rounded, '${post.imageCount}', AppTheme.primaryColor),
+      ],
+    );
+  }
+
+  Widget _badge(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.65),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 11),
+          const SizedBox(width: 3),
+          Text(text, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooter(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Action row
+          Row(
+            children: [
+              // Save button
+              if (onSave != null)
+                GestureDetector(
+                  onTap: onSave,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      post.saved ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+                      key: ValueKey(post.saved),
+                      color: post.saved ? AppTheme.primaryColor : AppTheme.darkSecondaryTextColor,
+                      size: 22,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              // Tags preview
+              if (post.tags.isNotEmpty)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: post.tags.take(2).map((tag) => Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                      ),
+                      child: Text(
+                        '#$tag',
+                        style: const TextStyle(
+                          color: AppTheme.primaryLightColor,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  )).toList(),
+                ),
+            ],
+          ),
+
+          // Title caption
+          if (post.title.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              post.title,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.darkPrimaryTextColor,
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
-
-    if (diff.inDays > 365) return '${(diff.inDays / 365).floor()} tahun lalu';
-    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()} bulan lalu';
-    if (diff.inDays > 0) return '${diff.inDays} hari lalu';
-    if (diff.inHours > 0) return '${diff.inHours} jam lalu';
-    return '${diff.inMinutes} menit lalu';
+    if (diff.inDays > 365) return '${(diff.inDays / 365).floor()}y ago';
+    if (diff.inDays > 30) return '${(diff.inDays / 30).floor()}mo ago';
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    return '${diff.inMinutes}m ago';
   }
 
   String _getCreatorAvatarUrl() {
-    final domain = post.service == 'fansly'
+    final domain = (post.service == 'fansly' || post.service == 'onlyfans' || post.service == 'candfans')
         ? 'https://coomer.st'
         : 'https://kemono.cr';
     return '$domain/data/avatars/${post.service}/${post.user}/avatar.jpg';
   }
 
   String _getCreatorDisplayName() {
-    // Try to get meaningful creator name
-    if (post.user.isNotEmpty) {
-      return post.user;
-    }
-
-    // Fallback to service name if user is empty
-    if (post.service.isNotEmpty) {
-      return '${post.service} Creator';
-    }
-
-    // Final fallback
+    if (post.user.isNotEmpty) return post.user;
+    if (post.service.isNotEmpty) return '${post.service} Creator';
     return 'Unknown Creator';
   }
 }

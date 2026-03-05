@@ -65,14 +65,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: AppTheme.getSurfaceColor(context),
-        foregroundColor: AppTheme.getOnSurfaceColor(context),
+        backgroundColor: AppTheme.getBackgroundColor(context),
         elevation: 0,
+        scrolledUnderElevation: 0,
+        title: ShaderMask(
+          shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+          child: const Text(
+            'Settings',
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 26,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
+          // ── Profile / App Card ──────────────────
+          _buildAppProfileCard(),
+          const SizedBox(height: 24),
           // Appearance Section
           _buildSectionTitle('Appearance'),
           _buildAppearanceSection(),
@@ -122,13 +136,102 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(
-        title,
-        style: AppTheme.titleStyle.copyWith(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.primaryColor,
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 16,
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ShaderMask(
+            shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppProfileCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.primaryColor.withValues(alpha: 0.20),
+            AppTheme.darkCardColor,
+          ],
         ),
+        borderRadius: BorderRadius.circular(AppTheme.lgRadius),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.25),
+        ),
+        boxShadow: [AppTheme.getElevatedShadow()],
+      ),
+      child: Row(
+        children: [
+          // App icon
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [AppTheme.getGlowShadow(AppTheme.primaryColor)],
+            ),
+            child: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 32),
+          ),
+          const SizedBox(width: 16),
+          // App info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'K/C Gallery',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                    color: AppTheme.darkPrimaryTextColor,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                  ),
+                  child: const Text(
+                    'Kemono & Coomer Viewer',
+                    style: TextStyle(
+                      color: AppTheme.primaryLightColor,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

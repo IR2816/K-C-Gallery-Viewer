@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui';
 
 // Screens
 import 'latest_posts_screen.dart';
@@ -11,16 +12,13 @@ import 'discord_server_screen.dart';
 // Theme
 import '../theme/app_theme.dart';
 
-/// 🎯 CONSOLIDATED MainNavigationScreen - Clean Navigation Hub
+/// MainNavigationScreen — Social Media Style Bottom Nav
 ///
 /// Features:
-/// - ✅ Enhanced bottom navigation with animations
-/// - ✅ Persistent state management
-/// - ✅ Smooth transitions
-/// - ✅ AppTheme consistency
-/// - ✅ Haptic feedback
-/// - ✅ Route delegation to consolidated screens
-/// - ✅ Clean navigation structure
+/// - Floating glass pill navigation bar
+/// - Gradient selected indicator
+/// - Smooth scale + fade animations
+/// - Haptic feedback
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
 
@@ -30,256 +28,202 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen>
     with TickerProviderStateMixin {
-  // Navigation State
   int _currentIndex = 0;
   final PageController _pageController = PageController();
 
-  // Animation Controllers
-  late List<AnimationController> _animationControllers;
-  late List<Animation<double>> _animations;
+  late List<AnimationController> _animControllers;
+  late List<Animation<double>> _scaleAnims;
 
-  // Navigation Items
-  final List<NavigationItem> _navItems = [
-    NavigationItem(
-      icon: Icons.article,
-      activeIcon: Icons.article,
-      label: 'Home',
-      color: Colors.blue,
-    ),
-    NavigationItem(
-      icon: Icons.search,
-      activeIcon: Icons.search,
-      label: 'Search',
-      color: Colors.green,
-    ),
-    NavigationItem(
-      icon: Icons.dns,
-      activeIcon: Icons.dns,
-      label: 'Discord',
-      color: Colors.purple,
-    ),
-    NavigationItem(
-      icon: Icons.bookmark,
-      activeIcon: Icons.bookmark,
-      label: 'Saved',
-      color: Colors.orange,
-    ),
-    NavigationItem(
-      icon: Icons.settings,
-      activeIcon: Icons.settings,
-      label: 'Settings',
-      color: Colors.grey,
-    ),
+  final List<_NavItem> _navItems = [
+    _NavItem(icon: Icons.home_rounded, label: 'Home', color: AppTheme.primaryColor),
+    _NavItem(icon: Icons.search_rounded, label: 'Search', color: Color(0xFF00C6AE)),
+    _NavItem(icon: Icons.forum_rounded, label: 'Discord', color: Color(0xFF5865F2)),
+    _NavItem(icon: Icons.bookmark_rounded, label: 'Saved', color: Color(0xFFFFB300)),
+    _NavItem(icon: Icons.settings_rounded, label: 'Settings', color: AppTheme.darkSecondaryTextColor),
   ];
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
+    _animControllers = List.generate(_navItems.length, (i) {
+      return AnimationController(duration: const Duration(milliseconds: 220), vsync: this);
+    });
+    _scaleAnims = _animControllers.map((c) {
+      return Tween<double>(begin: 1.0, end: 1.0).animate(
+        CurvedAnimation(parent: c, curve: Curves.easeOut),
+      );
+    }).toList();
+    _animControllers[0].forward();
   }
 
   @override
   void dispose() {
-    _disposeAnimations();
+    for (final c in _animControllers) c.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
-  // 🎯 INITIALIZATION
-  void _initializeAnimations() {
-    _animationControllers = List.generate(
-      _navItems.length,
-      (index) => AnimationController(
-        duration: const Duration(milliseconds: 200),
-        vsync: this,
-      ),
+  void _onTap(int index) {
+    if (index == _currentIndex) return;
+    HapticFeedback.lightImpact();
+    _animControllers[_currentIndex].reverse();
+    setState(() => _currentIndex = index);
+    _animControllers[index].forward();
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeInOutCubic,
     );
-
-    _animations = _animationControllers.map((controller) {
-      return Tween<double>(
-        begin: 1.0,
-        end: 1.2,
-      ).animate(CurvedAnimation(parent: controller, curve: Curves.easeInOut));
-    }).toList();
-
-    // Start with first item animated
-    _animationControllers[0].forward();
   }
 
-  void _disposeAnimations() {
-    for (final controller in _animationControllers) {
-      controller.dispose();
-    }
-  }
-
-  // 🎯 BUILD METHOD
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
+      extendBody: true,
       body: PageView(
         controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-          _updateAnimations(index);
+        physics: const NeverScrollableScrollPhysics(),
+        onPageChanged: (i) {
+          if (i != _currentIndex) {
+            _animControllers[_currentIndex].reverse();
+            setState(() => _currentIndex = i);
+            _animControllers[i].forward();
+          }
         },
         children: [
-          // Home Screen - Latest Posts
           const LatestPostsScreen(),
-
-          // Search Screen (DUAL: Name + ID Search)
           const SearchScreenDual(),
-
-          // Discord Screen - Kemono Discord Servers
           const DiscordServerScreen(),
-
-          // Saved Screen
           SavedScreen(),
-
-          // Settings Screen
           const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      bottomNavigationBar: _buildNavBar(isDark),
     );
   }
 
-  // 🎯 WIDGET BUILDERS
-
-  /// Enhanced Bottom Navigation Bar
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppTheme.smPadding,
-            vertical: AppTheme.xsPadding,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: _navItems.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              final isSelected = index == _currentIndex;
-
-              return GestureDetector(
-                onTap: () => _onBottomNavTap(index),
-                child: AnimatedBuilder(
-                  animation: _animations[index],
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: isSelected ? _animations[index].value : 1.0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.mdPadding,
-                          vertical: AppTheme.smPadding,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? item.color.withValues(alpha: 0.1)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(
-                            AppTheme.mdRadius,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Icon
-                            Icon(
-                              isSelected ? item.activeIcon : item.icon,
-                              color: isSelected
-                                  ? item.color
-                                  : AppTheme.getOnSurfaceColor(context),
-                              size: 24,
-                            ),
-                            const SizedBox(height: 4),
-
-                            // Label
-                            Text(
-                              item.label,
-                              style: AppTheme.captionStyle.copyWith(
-                                color: isSelected
-                                    ? item.color
-                                    : AppTheme.getOnSurfaceColor(context),
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
+  Widget _buildNavBar(bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.xlRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            height: 68,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? AppTheme.darkSurfaceColor.withValues(alpha: 0.90)
+                  : Colors.white.withValues(alpha: 0.90),
+              borderRadius: BorderRadius.circular(AppTheme.xlRadius),
+              border: Border.all(
+                color: isDark
+                    ? AppTheme.darkBorderColor.withValues(alpha: 0.6)
+                    : AppTheme.lightBorderColor,
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.18),
+                  blurRadius: 30,
+                  spreadRadius: -5,
+                  offset: const Offset(0, 10),
                 ),
-              );
-            }).toList(),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: _navItems.asMap().entries.map((e) {
+                final i = e.key;
+                final item = e.value;
+                final selected = i == _currentIndex;
+                return _buildNavItem(item, i, selected, isDark);
+              }).toList(),
+            ),
           ),
         ),
       ),
     );
   }
 
-  // 🎯 ACTION METHODS
-
-  /// Handle bottom navigation tap
-  void _onBottomNavTap(int index) {
-    if (index == _currentIndex) return;
-
-    HapticFeedback.lightImpact();
-
-    // Animate previous item
-    _animationControllers[_currentIndex].reverse();
-
-    // Update selected index
-    setState(() {
-      _currentIndex = index;
-    });
-
-    // Animate new item
-    _animationControllers[_currentIndex].forward();
-
-    // Navigate to page
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
+  Widget _buildNavItem(_NavItem item, int index, bool selected, bool isDark) {
+    return GestureDetector(
+      onTap: () => _onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: EdgeInsets.symmetric(
+          horizontal: selected ? 16 : 12,
+          vertical: 8,
+        ),
+        decoration: BoxDecoration(
+          gradient: selected
+              ? LinearGradient(
+                  colors: [
+                    item.color.withValues(alpha: 0.25),
+                    item.color.withValues(alpha: 0.10),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          borderRadius: BorderRadius.circular(AppTheme.lgRadius),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Icon(
+                item.icon,
+                key: ValueKey(selected),
+                color: selected
+                    ? item.color
+                    : (isDark ? AppTheme.darkSecondaryTextColor : AppTheme.lightSecondaryTextColor),
+                size: selected ? 26 : 24,
+              ),
+            ),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              child: selected
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 6),
+                      child: Text(
+                        item.label,
+                        style: TextStyle(
+                          color: item.color,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
     );
-  }
-
-  /// Update animations based on current index
-  void _updateAnimations(int newIndex) {
-    // Reset all animations
-    for (int i = 0; i < _animationControllers.length; i++) {
-      if (i == newIndex) {
-        _animationControllers[i].forward();
-      } else {
-        _animationControllers[i].reverse();
-      }
-    }
   }
 }
 
-/// Navigation Item Model
+class _NavItem {
+  final IconData icon;
+  final String label;
+  final Color color;
+  const _NavItem({required this.icon, required this.label, required this.color});
+}
+
+/// Navigation Item Model (kept for compat)
 class NavigationItem {
   final IconData icon;
   final IconData activeIcon;
   final String label;
   final Color color;
-
   const NavigationItem({
     required this.icon,
     required this.activeIcon,

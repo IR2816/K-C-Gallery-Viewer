@@ -85,3 +85,6 @@ flutter_export_environment.sh
 # Symbolication / Obfuscation
 app.*.symbols
 app.*.map.json
+
+
+task.md.resolved

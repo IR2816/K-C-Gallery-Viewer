@@ -208,15 +208,22 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        title: Text(
-          widget.apiSource == ApiSource.kemono ? 'Kemono' : 'Coomer',
-          style: AppTheme.getTitleStyle(
-            context,
-          ).copyWith(color: AppTheme.getOnBackgroundColor(context)),
+        title: ShaderMask(
+          shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+          child: Text(
+            widget.apiSource == ApiSource.kemono ? 'Kemono' : 'Coomer',
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 26,
+              color: Colors.white,
+              letterSpacing: -0.5,
+            ),
+          ),
         ),
-        backgroundColor: AppTheme.getSurfaceColor(context),
+        backgroundColor: AppTheme.getBackgroundColor(context),
         foregroundColor: AppTheme.getOnSurfaceColor(context),
         elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           // Refresh button with loading indicator
           if (!widget.isFromSavedPosts)
@@ -321,7 +328,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   Widget _buildCreatorHeader() {
     return Container(
-      padding: const EdgeInsets.all(AppTheme.mdPadding),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCardColor,
+        border: Border(bottom: BorderSide(color: AppTheme.darkBorderColor)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -331,8 +342,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               GestureDetector(
                 onTap: _navigateToCreatorDetail,
                 child: Container(
-                  width: 32,
-                  height: 32,
+                  width: 44,
+                  height: 44,
                   margin: const EdgeInsets.only(right: 12),
                   child: _buildCreatorAvatar(),
                 ),
@@ -342,61 +353,64 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               Expanded(
                 child: GestureDetector(
                   onTap: _navigateToCreatorDetail,
-                  child: Text(
-                    _currentPost.user,
-                    style: AppTheme.titleStyle.copyWith(
-                      color: AppTheme.primaryColor,
-                      fontSize: 16,
-                      decoration: TextDecoration.underline,
-                      decorationColor: AppTheme.primaryColor,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getServiceColor().withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: _getServiceColor().withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _getServiceDisplayName(),
-                  style: TextStyle(
-                    color: _getServiceColor(),
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _currentPost.user,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: _getServiceColor().withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              _getServiceDisplayName(),
+                              style: TextStyle(
+                                color: _getServiceColor(),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatDate(_currentPost.published.toString()),
+                            style: const TextStyle(
+                              color: AppTheme.darkSecondaryTextColor,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           if (_currentPost.title.isNotEmpty)
             Text(
               _currentPost.title,
-              style: AppTheme.titleStyle.copyWith(
-                color: AppTheme.getOnBackgroundColor(context),
+              style: const TextStyle(
+                color: Colors.white,
                 fontSize: 18,
-                fontWeight: FontWeight.w600,
-                height: 1.2,
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+                letterSpacing: -0.2,
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
             ),
-          const SizedBox(height: 4),
-          Text(
-            _formatDate(_currentPost.published.toString()),
-            style: AppTheme.bodyStyle.copyWith(
-              color: AppTheme.secondaryTextColor,
-              fontSize: 12,
-            ),
-          ),
         ],
       ),
     );

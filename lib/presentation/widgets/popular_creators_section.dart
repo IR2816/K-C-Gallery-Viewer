@@ -83,78 +83,67 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
     PopularCreatorsProvider popularProvider,
     SettingsProvider settingsProvider,
   ) {
-    return Container(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Row(
         children: [
-          // Title with Icon and Count
+          // Icon
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 10),
+          // Title
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.trending_up,
-                        color: AppTheme.primaryColor,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Popular Creators',
-                      style: AppTheme.subtitleStyle.copyWith(
-                        color: AppTheme.getOnBackgroundColor(context),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Popular Creators',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                    color: isDark ? AppTheme.darkPrimaryTextColor : AppTheme.lightPrimaryTextColor,
+                  ),
                 ),
-                if (popularProvider.totalItems > 0) ...[
-                  const SizedBox(height: 4),
+                if (popularProvider.totalItems > 0)
                   Text(
-                    '${popularProvider.totalItems.toString()} total creators',
-                    style: AppTheme.captionStyle.copyWith(
-                      color: AppTheme.getOnSurfaceColor(
-                        context,
-                      ).withValues(alpha: 0.6),
+                    '${popularProvider.totalItems} creators',
+                    style: TextStyle(
                       fontSize: 11,
+                      color: isDark ? AppTheme.darkSecondaryTextColor : AppTheme.lightSecondaryTextColor,
                     ),
                   ),
-                ],
               ],
             ),
           ),
-
-          // Service Selection Toggle
+          // Service toggle
           _buildServiceToggle(popularProvider),
-
-          const SizedBox(width: 12),
-
-          // Refresh Button
-          Container(
-            decoration: BoxDecoration(
-              color: AppTheme.getSurfaceColor(context),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+          const SizedBox(width: 8),
+          // Refresh
+          GestureDetector(
+            onTap: popularProvider.refresh,
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: isDark ? AppTheme.darkCardColor : AppTheme.lightElevatedSurfaceColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isDark ? AppTheme.darkBorderColor : AppTheme.lightBorderColor,
+                ),
               ),
-            ),
-            child: IconButton(
-              onPressed: popularProvider.refresh,
-              icon: Icon(
-                Icons.refresh,
-                color: AppTheme.getOnSurfaceColor(context),
-                size: 18,
+              child: Icon(
+                Icons.refresh_rounded,
+                size: 16,
+                color: isDark ? AppTheme.darkSecondaryTextColor : AppTheme.lightSecondaryTextColor,
               ),
-              tooltip: 'Refresh Popular Creators',
             ),
           ),
         ],
@@ -163,25 +152,24 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
   }
 
   Widget _buildServiceToggle(PopularCreatorsProvider popularProvider) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(20),
+        color: isDark ? AppTheme.darkCardColor : AppTheme.lightElevatedSurfaceColor,
+        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+          color: isDark ? AppTheme.darkBorderColor : AppTheme.lightBorderColor,
         ),
       ),
+      padding: const EdgeInsets.all(3),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Kemono Button
           _buildServiceButton(
             title: 'Kemono',
             isSelected: popularProvider.currentService == ApiSource.kemono,
             onTap: () => popularProvider.switchService(ApiSource.kemono),
           ),
-
-          // Coomer Button
           _buildServiceButton(
             title: 'Coomer',
             isSelected: popularProvider.currentService == ApiSource.coomer,
@@ -201,21 +189,18 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: isSelected
-              ? AppTheme.primaryColor.withValues(alpha: 0.2)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
+          gradient: isSelected ? AppTheme.primaryGradient : null,
+          color: isSelected ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppTheme.pillRadius),
         ),
         child: Text(
           title,
           style: TextStyle(
-            color: isSelected
-                ? AppTheme.primaryColor
-                : AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.7),
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            fontSize: 12,
+            color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 11,
           ),
         ),
       ),
@@ -453,23 +438,13 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.15),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 
-              Theme.of(context).brightness == Brightness.dark ? 0.3 : 0.1,
-            ),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppTheme.darkBorderColor, width: 1),
+        boxShadow: [AppTheme.getCardShadow()],
       ),
       child: Material(
         color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
         child: InkWell(
           onTap: () {
             Navigator.push(
@@ -482,130 +457,132 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
               ),
             );
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(20),
             child: SizedBox(
-              height: 110,
+              height: 118,
               child: Stack(
                 children: [
+                  // Banner
                   Positioned.fill(
                     child: CachedNetworkImage(
                       imageUrl: bannerUrl,
                       httpHeaders: _getCoomerHeaders(bannerUrl),
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: serviceColor.withValues(alpha: 0.15),
+                      placeholder: (_, __) => Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              serviceColor.withValues(alpha: 0.25),
+                              AppTheme.darkElevatedSurfaceColor,
+                            ],
+                          ),
+                        ),
                       ),
-                      errorWidget: (context, url, error) => Container(
+                      errorWidget: (_, __, ___) => Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              serviceColor.withValues(alpha: 0.3),
-                              Colors.black.withValues(alpha: 0.6),
+                              serviceColor.withValues(alpha: 0.25),
+                              AppTheme.darkBackgroundColor,
                             ],
                           ),
                         ),
                       ),
                     ),
                   ),
+                  // Gradient overlay
                   Positioned.fill(
-                    child: Container(
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withValues(alpha: 0.35),
-                            Colors.black.withValues(alpha: 0.7),
+                            Colors.black.withValues(alpha: 0.15),
+                            Colors.black.withValues(alpha: 0.75),
                           ],
                         ),
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 10,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: serviceColor.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        creator.service.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Rank badge (top-right)
                   Positioned(
                     top: 10,
                     right: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.45),
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.black.withValues(alpha: 0.55),
+                        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                       ),
                       child: Text(
                         '#${index + 1}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
+                  // Service badge (top-left)
+                  Positioned(
+                    top: 10,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: serviceColor.withValues(alpha: 0.85),
+                        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                      ),
+                      child: Text(
+                        creator.service.toUpperCase(),
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                  ),
+                  // Bottom row: story-ring avatar + name
                   Positioned(
                     left: 12,
                     right: 12,
                     bottom: 12,
                     child: Row(
                       children: [
+                        // Story-ring avatar
                         Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.2),
-                            ),
+                          width: 46,
+                          height: 46,
+                          padding: const EdgeInsets.all(2.5),
+                          decoration: const BoxDecoration(
+                            gradient: AppTheme.storyRingGradient,
+                            shape: BoxShape.circle,
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: CachedNetworkImage(
-                              imageUrl: iconUrl,
-                              httpHeaders: _getCoomerHeaders(iconUrl),
-                              fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => Center(
-                                child: Text(
-                                  creator.name.isNotEmpty
-                                      ? creator.name[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: AppTheme.darkElevatedSurfaceColor,
+                              shape: BoxShape.circle,
+                            ),
+                            padding: const EdgeInsets.all(1.5),
+                            child: ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl: iconUrl,
+                                httpHeaders: _getCoomerHeaders(iconUrl),
+                                fit: BoxFit.cover,
+                                errorWidget: (_, __, ___) => Center(
+                                  child: Text(
+                                    creator.name.isNotEmpty ? creator.name[0].toUpperCase() : '?',
+                                    style: const TextStyle(
+                                      color: AppTheme.primaryColor,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -621,12 +598,11 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
                               Text(
                                 secondaryText,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  fontSize: 11,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -634,11 +610,7 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                             ],
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: Colors.white70,
-                          size: 20,
-                        ),
+                        const Icon(Icons.chevron_right_rounded, color: Colors.white60, size: 20),
                       ],
                     ),
                   ),

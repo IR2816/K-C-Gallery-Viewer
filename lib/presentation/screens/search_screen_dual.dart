@@ -375,29 +375,46 @@ class _SearchScreenDualState extends State<SearchScreenDual>
       child: Builder(
         builder: (context) {
           return Scaffold(
-            backgroundColor: Theme.of(context).colorScheme.surface,
+            backgroundColor: AppTheme.getBackgroundColor(context),
             appBar: AppBar(
-              backgroundColor: Theme.of(context).colorScheme.surface,
-              foregroundColor: Theme.of(context).colorScheme.onSurface,
+              backgroundColor: AppTheme.getBackgroundColor(context),
               elevation: 0,
-              title: Text(
-                'Creator Search',
-                style: AppTheme.titleStyle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontSize: 20,
+              scrolledUnderElevation: 0,
+              title: ShaderMask(
+                shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+                child: const Text(
+                  'Discover',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 26,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
                 ),
               ),
-              bottom: TabBar(
-                controller: _tabController,
-                indicatorColor: AppTheme.primaryColor,
-                labelColor: Theme.of(context).colorScheme.onSurface,
-                unselectedLabelColor: Theme.of(
-                  context,
-                ).colorScheme.onSurface.withValues(alpha: 0.6),
-                tabs: const [
-                  Tab(icon: Icon(Icons.person_search), text: 'Search by Name'),
-                  Tab(icon: Icon(Icons.tag), text: 'Search by ID'),
-                ],
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(44),
+                child: Container(
+                  height: 44,
+                  alignment: Alignment.centerLeft,
+                  child: TabBar(
+                    controller: _tabController,
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    indicator: const UnderlineTabIndicator(
+                      borderSide: BorderSide(color: AppTheme.primaryColor, width: 3),
+                      insets: EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    labelColor: AppTheme.primaryColor,
+                    unselectedLabelColor: AppTheme.darkSecondaryTextColor,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                    tabs: const [
+                      Tab(icon: Icon(Icons.person_search_rounded, size: 16), text: 'By Name'),
+                      Tab(icon: Icon(Icons.tag_rounded, size: 16), text: 'By ID'),
+                    ],
+                  ),
+                ),
               ),
             ),
             body: Column(
@@ -421,23 +438,28 @@ class _SearchScreenDualState extends State<SearchScreenDual>
   }
 
   Widget _buildApiSourceSelector(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.all(AppTheme.mdPadding),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           Text(
-            'API Source:',
-            style: AppTheme.captionStyle.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
+            'Source',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.darkSecondaryTextColor,
             ),
           ),
-          const SizedBox(width: AppTheme.smSpacing),
+          const SizedBox(width: 12),
           Expanded(
             child: Container(
+              height: 36,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.smRadius),
+                color: AppTheme.darkCardColor,
+                borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                border: Border.all(color: AppTheme.darkBorderColor),
               ),
+              padding: const EdgeInsets.all(3),
               child: Row(
                 children: [
                   _buildApiSourceButton(ApiSource.kemono),
@@ -457,46 +479,42 @@ class _SearchScreenDualState extends State<SearchScreenDual>
       (provider) =>
           provider.preparing && provider.currentApiSource == apiSource,
     );
+    final label = apiSource == ApiSource.kemono ? 'Kemono' : 'Coomer';
 
     return Expanded(
       child: GestureDetector(
         onTap: isPreparing ? null : () => _switchApiSource(apiSource),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
           decoration: BoxDecoration(
-            color: isSelected ? AppTheme.primaryColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppTheme.smRadius),
+            gradient: isSelected ? AppTheme.primaryGradient : null,
+            borderRadius: BorderRadius.circular(AppTheme.pillRadius),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (isPreparing)
-                SizedBox(
+                const SizedBox(
                   width: 12,
                   height: 12,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      isSelected ? Colors.white : AppTheme.primaryColor,
-                    ),
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
               else
                 Icon(
-                  apiSource == ApiSource.kemono ? Icons.star : Icons.favorite,
-                  size: 16,
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
+                  apiSource == ApiSource.kemono ? Icons.star_rounded : Icons.favorite_rounded,
+                  size: 14,
+                  color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
                 ),
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Text(
-                apiSource.name.toUpperCase(),
-                style: AppTheme.captionStyle.copyWith(
-                  color: isSelected
-                      ? Colors.white
-                      : Theme.of(context).colorScheme.onSurface,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 12,
                 ),
               ),
             ],

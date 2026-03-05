@@ -407,9 +407,10 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     return SliverAppBar(
       pinned: true,
       floating: false,
-      backgroundColor: AppTheme.getSurfaceColor(context),
+      backgroundColor: AppTheme.getBackgroundColor(context),
       foregroundColor: AppTheme.getOnSurfaceColor(context),
       elevation: 0,
+      scrolledUnderElevation: 0,
       expandedHeight: 200, // Banner (120) + AppBar space (80)
       leading: IconButton(
         icon: Icon(
@@ -452,14 +453,25 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.only(
-          left: 76,
+          left: 80,
           bottom: 16,
-        ), // Space untuk avatar
-        title: Text(
-          widget.creator.name,
-          style: AppTheme.getTitleStyle(context).copyWith(
-            color: AppTheme.getOnSurfaceColor(context),
-            fontWeight: FontWeight.w600,
+          right: 16,
+        ),
+        title: ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Colors.white, Colors.white70],
+          ).createShader(bounds),
+          child: Text(
+            widget.creator.name,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 20,
+              letterSpacing: -0.5,
+              shadows: [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2))],
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
         background: Stack(
@@ -496,13 +508,19 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       delegate: _TabBarDelegate(
         TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.article_outlined), text: 'Posts'),
-            Tab(icon: Icon(Icons.photo_library_outlined), text: 'Media'),
-          ],
           labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: AppTheme.secondaryTextColor,
+          unselectedLabelColor: AppTheme.darkSecondaryTextColor,
+          indicator: const UnderlineTabIndicator(
+            borderSide: BorderSide(color: AppTheme.primaryColor, width: 3),
+            insets: EdgeInsets.symmetric(horizontal: 16),
+          ),
           indicatorColor: AppTheme.primaryColor,
+          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+          tabs: const [
+            Tab(icon: Icon(Icons.grid_view_rounded, size: 20), text: 'Posts'),
+            Tab(icon: Icon(Icons.photo_library_rounded, size: 20), text: 'Media'),
+          ],
         ),
       ),
     );
@@ -569,7 +587,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     );
   }
 
-  /// ðŸš€ NEW: Build creator avatar widget
+  /// 🚀 NEW: Build creator avatar widget
   Widget _buildCreatorAvatar() {
     final iconUrl = _buildCreatorIconUrl(
       apiSource: widget.apiSource,
@@ -577,18 +595,28 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       creatorId: widget.creator.id,
     );
 
-    return CircleAvatar(
-      radius: 24, // Sedikit lebih besar untuk flexible space
-      backgroundColor: AppTheme.getSurfaceColor(context),
-      backgroundImage: CachedNetworkImageProvider(
-        iconUrl,
-        // ðŸš€ FIX: Add HTTP headers for Coomer CDN anti-hotlink protection
-        headers: _getCoomerHeaders(iconUrl),
+    return Container(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: AppTheme.darkCardColor, width: 3),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      onBackgroundImageError: (error, stackTrace) {
-        // Error handled by fallback child
-      },
-      child: Icon(Icons.person, color: AppTheme.secondaryTextColor, size: 24),
+      child: CircleAvatar(
+        radius: 26,
+        backgroundColor: AppTheme.darkCardColor,
+        backgroundImage: CachedNetworkImageProvider(
+          iconUrl,
+          headers: _getCoomerHeaders(iconUrl),
+        ),
+        onBackgroundImageError: (error, stackTrace) {},
+        child: const Icon(Icons.person, color: AppTheme.darkSecondaryTextColor, size: 24),
+      ),
     );
   }
 

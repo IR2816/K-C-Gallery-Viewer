@@ -79,32 +79,60 @@ class _SavedScreenState extends State<SavedScreen>
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        title: Text(
-          'Saved',
-          style: AppTheme.titleStyle.copyWith(
-            color: AppTheme.getOnBackgroundColor(context),
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: AppTheme.getSurfaceColor(context),
-        foregroundColor: AppTheme.getOnSurfaceColor(context),
+        backgroundColor: AppTheme.getBackgroundColor(context),
         elevation: 0,
-        actions: [
-          // Auto-refresh button
-          IconButton(
-            onPressed: _refreshAllData,
-            icon: Icon(
-              Icons.refresh,
-              color: AppTheme.getOnSurfaceColor(context),
+        scrolledUnderElevation: 0,
+        title: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
+                ),
+                borderRadius: BorderRadius.circular(9),
+              ),
+              child: const Icon(Icons.bookmark_rounded, color: Colors.white, size: 18),
             ),
-            tooltip: 'Refresh All',
+            const SizedBox(width: 10),
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
+              ).createShader(bounds),
+              child: const Text(
+                'Collections',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 26,
+                  color: Colors.white,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          GestureDetector(
+            onTap: _refreshAllData,
+            child: Container(
+              width: 34,
+              height: 34,
+              margin: const EdgeInsets.only(right: 16),
+              decoration: BoxDecoration(
+                color: AppTheme.darkCardColor,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppTheme.darkBorderColor),
+              ),
+              child: const Icon(Icons.refresh_rounded, size: 16, color: AppTheme.darkSecondaryTextColor),
+            ),
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(60),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(children: [Expanded(child: _buildSegmentedControl())]),
+          preferredSize: const Size.fromHeight(56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: _buildSegmentedControl(),
           ),
         ),
       ),
@@ -116,29 +144,63 @@ class _SavedScreenState extends State<SavedScreen>
   }
 
   Widget _buildSegmentedControl() {
-    return Container(
-      height: 40,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(16),
+    return AnimatedBuilder(
+      animation: _tabController,
+      builder: (context, _) {
+        return Container(
+          height: 38,
+          decoration: BoxDecoration(
+            color: AppTheme.darkCardColor,
+            borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+            border: Border.all(color: AppTheme.darkBorderColor),
+          ),
+          padding: const EdgeInsets.all(3),
+          child: Row(
+            children: [
+              _buildSegmentTab(0, 'Posts', Icons.photo_library_rounded),
+              _buildSegmentTab(1, 'Creators', Icons.people_alt_rounded),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSegmentTab(int index, String label, IconData icon) {
+    final isSelected = _tabController.index == index;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _tabController.animateTo(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          decoration: BoxDecoration(
+            gradient: isSelected
+                ? const LinearGradient(
+                    colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
+                  )
+                : null,
+            borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 14,
+                color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
         ),
-        labelColor: AppTheme.primaryColor,
-        unselectedLabelColor: AppTheme.secondaryTextColor,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-        unselectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w400,
-          fontSize: 14,
-        ),
-        tabs: const [
-          Tab(text: 'Posts'),
-          Tab(text: 'Creators'),
-        ],
       ),
     );
   }

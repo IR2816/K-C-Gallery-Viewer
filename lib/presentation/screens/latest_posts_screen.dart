@@ -13,6 +13,8 @@ import '../utils/media_preview_resolver.dart';
 import 'post_detail_screen.dart';
 import 'creator_detail_screen.dart';
 import 'download_manager_screen.dart';
+import '../widgets/post_card.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 /// Latest Posts Screen - Quick Update Feed
 class LatestPostsScreen extends StatefulWidget {
@@ -499,102 +501,163 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
 
   PreferredSizeWidget _buildTopAppBar() {
     return AppBar(
-      title: const Text(
-        'Latest',
-        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 20),
-      ),
-      backgroundColor: AppTheme.getSurfaceColor(context),
-      foregroundColor: AppTheme.getOnSurfaceColor(context),
+      backgroundColor: AppTheme.getBackgroundColor(context),
       elevation: 0,
-      actions: [
-        IconButton(
-          onPressed: _loadInitialPosts,
-          icon: _isLoading
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppTheme.primaryColor,
-                  ),
-                )
-              : const Icon(Icons.refresh),
-          tooltip: 'Refresh',
+      scrolledUnderElevation: 0,
+      title: ShaderMask(
+        shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+        child: const Text(
+          'Feed',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 26,
+            color: Colors.white,
+            letterSpacing: -0.5,
+          ),
         ),
-        IconButton(
-          onPressed: _showFilterBottomSheet,
-          icon: const Icon(Icons.filter_list),
-          tooltip: 'Filter',
+      ),
+      actions: [
+        // Download shortcut
+        GestureDetector(
+          onTap: _showDownloadManager,
+          child: Container(
+            width: 36,
+            height: 36,
+            margin: const EdgeInsets.only(right: 6),
+            decoration: BoxDecoration(
+              color: AppTheme.secondaryAccent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.download_rounded, color: AppTheme.secondaryAccent, size: 20),
+          ),
+        ),
+        // Refresh
+        GestureDetector(
+          onTap: _loadInitialPosts,
+          child: Container(
+            width: 36,
+            height: 36,
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: _isLoading
+                  ? AppTheme.primaryColor.withValues(alpha: 0.12)
+                  : AppTheme.darkCardColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppTheme.darkBorderColor),
+            ),
+            child: _isLoading
+                ? const Padding(
+                    padding: EdgeInsets.all(9),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppTheme.primaryColor,
+                    ),
+                  )
+                : const Icon(Icons.refresh_rounded, size: 18, color: AppTheme.darkSecondaryTextColor),
+          ),
+        ),
+        // Filter
+        GestureDetector(
+          onTap: _showFilterBottomSheet,
+          child: Container(
+            width: 36,
+            height: 36,
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: _blockedTags.isNotEmpty
+                  ? AppTheme.primaryColor.withValues(alpha: 0.15)
+                  : AppTheme.darkCardColor,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: _blockedTags.isNotEmpty
+                    ? AppTheme.primaryColor.withValues(alpha: 0.4)
+                    : AppTheme.darkBorderColor,
+              ),
+            ),
+            child: Icon(
+              Icons.tune_rounded,
+              size: 18,
+              color: _blockedTags.isNotEmpty
+                  ? AppTheme.primaryColor
+                  : AppTheme.darkSecondaryTextColor,
+            ),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildFilterInfoBar() {
+    final services = [
+      {'id': 'kemono', 'label': 'Kemono'},
+      {'id': 'coomer', 'label': 'Coomer'},
+    ];
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: AppTheme.getSurfaceColor(context),
-      child: Row(
+      height: 48,
+      margin: const EdgeInsets.only(bottom: 4),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         children: [
-          Text(
-            _getServiceDisplayName(_selectedService),
-            style: AppTheme.captionStyle.copyWith(
-              color: _getServiceColor(_selectedService),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          if (_blockedTags.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Text(
-              '•',
-              style: AppTheme.captionStyle.copyWith(
-                color: AppTheme.getOnSurfaceColor(context),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '${_blockedTags.length} tags blocked',
-              style: AppTheme.captionStyle.copyWith(
-                color: AppTheme.getOnSurfaceColor(context),
-              ),
-            ),
-          ],
-          const Spacer(),
-          GestureDetector(
-            onTap: _showDownloadManager,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.download, color: Colors.green, size: 14),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Downloads',
-                    style: AppTheme.captionStyle.copyWith(
-                      color: Colors.green,
-                      fontWeight: FontWeight.w600,
+          ...services.map((s) {
+            final sid = s['id']!;
+            final isSelected = sid == _selectedService;
+            final serviceColor = _getServiceColor(sid);
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: GestureDetector(
+                onTap: () async {
+                  setState(() => _selectedService = sid);
+                  await _loadInitialPosts();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                  decoration: BoxDecoration(
+                    gradient: isSelected
+                        ? LinearGradient(
+                            colors: [serviceColor, serviceColor.withValues(alpha: 0.7)],
+                          )
+                        : null,
+                    color: isSelected ? null : AppTheme.darkCardColor,
+                    borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                    border: Border.all(
+                      color: isSelected
+                          ? serviceColor
+                          : AppTheme.darkBorderColor,
+                      width: 1.5,
                     ),
                   ),
-                ],
+                  child: Text(
+                    s['label']!,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+                      fontSize: 12,
+                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+          if (_blockedTags.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.warningColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                border: Border.all(color: AppTheme.warningColor.withValues(alpha: 0.3)),
+              ),
+              child: Text(
+                '${_blockedTags.length} blocked',
+                style: const TextStyle(
+                  color: AppTheme.warningColor,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: _showFilterBottomSheet,
-            child: Text(
-              'Filter',
-              style: AppTheme.captionStyle.copyWith(
-                color: AppTheme.primaryColor,
-                decoration: TextDecoration.underline,
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -695,376 +758,40 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       );
     }
 
-    return GridView.builder(
+    return MasonryGridView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columnCount,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: aspectRatio,
       ),
-      cacheExtent: cacheExtent,
+      mainAxisSpacing: 14,
+      crossAxisSpacing: 12,
       addAutomaticKeepAlives: false,
       itemCount: pagePosts.length,
       itemBuilder: (context, index) {
+        final post = pagePosts[index];
         return RepaintBoundary(
-          child: _buildPostCard(
-            pagePosts[index],
-            settings: settings,
-            memCacheWidth: memCacheWidth,
-            columnCount: columnCount,
+          child: PostCard(
+            post: post,
+            apiSource: _settingsProvider!.defaultApiSource,
+            onTap: () => _navigateToPostDetail(post),
+            onCreatorTap: () {
+              final creator = Creator(
+                id: post.user,
+                name: post.user,
+                service: post.service,
+                indexed: 0,
+                updated: 0,
+              );
+              _navigateToCreatorDetail(creator);
+            },
           ),
         );
       },
     );
   }
 
-  Widget _buildPostCard(
-    Post post, {
-    required SettingsProvider settings,
-    required int memCacheWidth,
-    required int columnCount,
-  }) {
-    final style = settings.latestPostCardStyle;
-    if (style == 'compact') {
-      return _buildPostCardCompact(
-        post,
-        settings: settings,
-        memCacheWidth: memCacheWidth,
-        columnCount: columnCount,
-      );
-    }
-    return _buildPostCardRich(
-      post,
-      settings: settings,
-      memCacheWidth: memCacheWidth,
-      columnCount: columnCount,
-    );
-  }
 
-  Widget _buildPostCardCompact(
-    Post post, {
-    required SettingsProvider settings,
-    required int memCacheWidth,
-    required int columnCount,
-  }) {
-    final hasBlockedTags = _hasBlockedTags(post);
-    final mediaItems = _getPostMediaItems(post);
-    final hasVideo = mediaItems.any((item) => item['type'] == 'video');
-    final thumbnailMedia = mediaItems.isNotEmpty ? mediaItems.first : null;
-    final mediaCount = mediaItems.length;
-    final serviceColor = _getServiceColor(post.service);
-    final previewText = post.title.isNotEmpty
-        ? post.title
-        : _cleanHtmlContent(post.content);
-    final normalizedTitle = _normalizeTitle(
-      previewText.isNotEmpty ? previewText : 'Untitled post',
-    );
-    final displayText =
-        normalizedTitle.isNotEmpty ? normalizedTitle : 'Untitled post';
-    final titleMaxLines = _getTitleMaxLines(
-      textLength: displayText.length,
-      columnCount: columnCount,
-      isCompact: true,
-    );
-    final titleFontSize = _getTitleFontSize(
-      textLength: displayText.length,
-      columnCount: columnCount,
-      isCompact: true,
-    );
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color:
-                AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: () => _navigateToPostDetail(post),
-          onLongPress: () => _showPostOptions(post),
-          borderRadius: BorderRadius.circular(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                child: Stack(
-                  children: [
-                    AspectRatio(
-                      aspectRatio: 16 / 9,
-                      child: thumbnailMedia != null
-                          ? _buildMediaPreview(
-                              thumbnailMedia,
-                              mediaCount,
-                              hasVideo,
-                              hasBlockedTags,
-                              settings: settings,
-                              memCacheWidth: memCacheWidth,
-                            )
-                          : MediaPreviewResolver.buildNoMediaPlaceholder(),
-                    ),
-                    Positioned(
-                      left: 12,
-                      bottom: 12,
-                      child: _buildServiceBadge(post.service, serviceColor),
-                    ),
-                    if (mediaCount > 0)
-                      Positioned(
-                        top: 10,
-                        right: 10,
-                        child: _buildMediaCountBadge(
-                          mediaCount,
-                          hasVideo,
-                          hasBlockedTags,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        _buildCreatorAvatar(post.user, serviceColor),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            post.user,
-                            style: AppTheme.bodyStyle.copyWith(
-                              color: hasBlockedTags
-                                  ? Colors.red.withValues(alpha: 0.8)
-                                  : AppTheme.getOnSurfaceColor(context),
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          _formatDate(post.published),
-                          style: AppTheme.captionStyle.copyWith(
-                            color: AppTheme.getOnSurfaceColor(context)
-                                .withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: Text(
-                        displayText,
-                        style: AppTheme.bodyStyle.copyWith(
-                          color: AppTheme.getOnSurfaceColor(context),
-                          fontWeight: FontWeight.w600,
-                          height: 1.25,
-                          fontSize: titleFontSize,
-                        ),
-                        maxLines: titleMaxLines,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildSocialActions(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPostCardRich(
-    Post post, {
-    required SettingsProvider settings,
-    required int memCacheWidth,
-    required int columnCount,
-  }) {
-    final hasBlockedTags = _hasBlockedTags(post);
-    final mediaItems = _getPostMediaItems(post);
-    final hasVideo = mediaItems.any((item) => item['type'] == 'video');
-    final thumbnailMedia = mediaItems.isNotEmpty ? mediaItems.first : null;
-    final mediaCount = mediaItems.length;
-    final serviceColor = _getServiceColor(post.service);
-    final previewText = post.title.isNotEmpty
-        ? post.title
-        : _cleanHtmlContent(post.content);
-    final normalizedTitle = _normalizeTitle(
-      previewText.isNotEmpty ? previewText : 'Untitled post',
-    );
-    final displayText =
-        normalizedTitle.isNotEmpty ? normalizedTitle : 'Untitled post';
-    final titleMaxLines = _getTitleMaxLines(
-      textLength: displayText.length,
-      columnCount: columnCount,
-      isCompact: false,
-    );
-    final titleFontSize = _getTitleFontSize(
-      textLength: displayText.length,
-      columnCount: columnCount,
-      isCompact: false,
-    );
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color:
-                AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.1),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Material(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          onTap: () => _navigateToPostDetail(post),
-          onLongPress: () => _showPostOptions(post),
-          borderRadius: BorderRadius.circular(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 4,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(18),
-                    topRight: Radius.circular(18),
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: thumbnailMedia != null
-                            ? _buildMediaPreview(
-                                thumbnailMedia,
-                                mediaCount,
-                                hasVideo,
-                                hasBlockedTags,
-                                settings: settings,
-                                memCacheWidth: memCacheWidth,
-                              )
-                            : MediaPreviewResolver.buildNoMediaPlaceholder(),
-                      ),
-                      Positioned(
-                        left: 12,
-                        bottom: 12,
-                        child: _buildServiceBadge(
-                          post.service,
-                          serviceColor,
-                        ),
-                      ),
-                      if (mediaCount > 0)
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: _buildMediaCountBadge(
-                            mediaCount,
-                            hasVideo,
-                            hasBlockedTags,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 3,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          _buildCreatorAvatar(post.user, serviceColor),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              post.user,
-                              style: AppTheme.bodyStyle.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: hasBlockedTags
-                                    ? Colors.red.withValues(alpha: 0.8)
-                                    : AppTheme.getOnSurfaceColor(context),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            _formatDate(post.published),
-                            style: AppTheme.captionStyle.copyWith(
-                              color: AppTheme.getOnSurfaceColor(context)
-                                  .withValues(alpha: 0.6),
-                              fontSize: 10,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Flexible(
-                        child: Text(
-                          displayText,
-                          style: AppTheme.bodyStyle.copyWith(
-                            color: AppTheme.getOnSurfaceColor(context),
-                            fontWeight: FontWeight.w600,
-                            height: 1.25,
-                            fontSize: titleFontSize,
-                          ),
-                          maxLines: titleMaxLines,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const Spacer(),
-                      _buildSocialActions(),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCreatorAvatar(String name, Color color) {
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    return CircleAvatar(
-      radius: 14,
-      backgroundColor: color.withValues(alpha: 0.18),
-      child: Text(
-        initial,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
-      ),
-    );
-  }
 
   Widget _buildServiceBadge(String service, Color color) {
     return Container(
@@ -1135,77 +862,70 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     final canGoNext = _hasMore || _currentPage < totalLoadedPages;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 96, top: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
+        color: AppTheme.getSurfaceColor(context).withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.1),
+        ),
         boxShadow: [
           BoxShadow(
-            color:
-                AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildPageButton(
-            icon: Icons.chevron_left,
+            icon: Icons.chevron_left_rounded,
             label: 'Prev',
             enabled: canGoPrev,
             onTap: () => _goToPage(_currentPage - 1),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              decoration: BoxDecoration(
-                color: AppTheme.getBackgroundColor(context),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: AppTheme.getOnSurfaceColor(context)
-                      .withValues(alpha: 0.08),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Page $_currentPage',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 14,
+                  color: Colors.white,
                 ),
               ),
-              child: Column(
+              Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Page $_currentPage',
-                    style: AppTheme.bodyStyle.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _hasMore
-                        ? '$totalLoadedPages+ loaded'
-                        : '$totalLoadedPages total',
-                    style: AppTheme.captionStyle.copyWith(
-                      color: AppTheme.getOnSurfaceColor(context)
-                          .withValues(alpha: 0.6),
-                    ),
-                  ),
                   if (_isLoadingMore) ...[
-                    const SizedBox(height: 6),
                     const SizedBox(
-                      height: 12,
-                      width: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppTheme.primaryColor,
-                      ),
+                      width: 10,
+                      height: 10,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor),
                     ),
+                    const SizedBox(width: 4),
                   ],
+                  Text(
+                    _hasMore ? '$totalLoadedPages+ loaded' : '$totalLoadedPages total',
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.darkSecondaryTextColor,
+                    ),
+                  ),
                 ],
               ),
-            ),
+            ],
           ),
-          const SizedBox(width: 12),
           _buildPageButton(
-            icon: Icons.chevron_right,
+            icon: Icons.chevron_right_rounded,
             label: _hasMore ? 'Next' : 'End',
             enabled: canGoNext,
+            isNext: true,
             onTap: () => _goToPage(_currentPage + 1),
           ),
         ],
@@ -1218,37 +938,51 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     required String label,
     required bool enabled,
     required VoidCallback onTap,
+    bool isNext = false,
   }) {
-    final color = enabled
-        ? AppTheme.primaryColor
-        : AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.3);
-    return InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: enabled
-              ? AppTheme.primaryColor.withValues(alpha: 0.12)
-              : AppTheme.getBackgroundColor(context),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: enabled ? AppTheme.primaryColor : color,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: AppTheme.captionStyle.copyWith(
-                color: color,
-                fontWeight: FontWeight.w700,
-              ),
+    final color = enabled 
+        ? AppTheme.primaryColor 
+        : AppTheme.darkSecondaryTextColor.withValues(alpha: 0.5);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: enabled 
+                ? AppTheme.primaryColor.withValues(alpha: 0.15) 
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: enabled 
+                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
+                  : Colors.transparent,
             ),
-          ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!isNext) ...[
+                Icon(icon, color: color, size: 20),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+              if (isNext) ...[
+                const SizedBox(width: 4),
+                Icon(icon, color: color, size: 20),
+              ],
+            ],
+          ),
         ),
       ),
     );
