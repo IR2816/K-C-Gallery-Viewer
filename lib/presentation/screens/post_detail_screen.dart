@@ -80,10 +80,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
   Post? _fullPost;
   bool _isRefreshingContent = false;
+  late ApiSource _activeApiSource;
+  bool _isSwitchingSource = false;
 
   @override
   void initState() {
     super.initState();
+    _activeApiSource = widget.apiSource;
     _tabController = TabController(length: 2, vsync: this);
 
     // Initialize audio player
@@ -165,7 +168,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     });
 
     try {
-
       final postsProvider = context.read<PostsProvider>();
 
       // Force fresh API call by clearing any existing cache
@@ -173,6 +175,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         widget.post.service, // service FIRST
         widget.post.user, // creatorId SECOND
         widget.post.id, // postId THIRD
+        apiSource: _activeApiSource,
       );
 
       // Get the updated post data from provider
@@ -203,28 +206,204 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   /// Get current post (full post if available, otherwise original post)
   Post get _currentPost => _fullPost ?? widget.post;
 
+  Future<void> _switchApiSource(ApiSource targetSource) async {
+    if (_isSwitchingSource || targetSource == _activeApiSource) {
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+    _showDomainTransitionAnimation(_activeApiSource, targetSource);
+
+    setState(() {
+      _isSwitchingSource = true;
+      _activeApiSource = targetSource;
+      _cachedMediaItems = [];
+      _cachedVideoItems = [];
+      _cachedAudioItems = [];
+      _mediaCacheKey = null;
+      _cachedLinks = null;
+      _cachedContentHash = null;
+      _fullPost = null;
+    });
+
+    try {
+      await _loadFullPost();
+      if (mounted) {
+        final commentsProvider = context.read<CommentsProvider>();
+        commentsProvider.clearComments();
+        await commentsProvider.loadComments(
+          widget.post.id,
+          widget.post.service,
+          widget.post.user,
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSwitchingSource = false;
+        });
+      }
+    }
+  }
+
+  void _showDomainTransitionAnimation(ApiSource from, ApiSource to) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    final fromLabel = from == ApiSource.kemono ? 'Kemono' : 'Coomer';
+    final toLabel = to == ApiSource.kemono ? 'Kemono' : 'Coomer';
+    final accent = to == ApiSource.kemono
+        ? AppTheme.primaryColor
+        : AppTheme.accentColor;
+
+    entry = OverlayEntry(
+      builder: (context) => IgnorePointer(
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 460),
+          tween: Tween(begin: 0, end: 1),
+          curve: Curves.easeOutCubic,
+          onEnd: () => entry.remove(),
+          builder: (context, value, child) {
+            return ColoredBox(
+              color: Colors.black.withValues(alpha: 0.18 * (1 - value)),
+              child: Center(
+                child: Opacity(
+                  opacity: (1 - (value - 0.65).clamp(0, 0.35) / 0.35).clamp(
+                    0,
+                    1,
+                  ),
+                  child: Transform.scale(
+                    scale: 0.92 + (0.08 * value),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkCardColor.withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: accent.withValues(alpha: 0.55),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accent.withValues(alpha: 0.28),
+                            blurRadius: 16,
+                            spreadRadius: -8,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            fromLabel,
+                            style: const TextStyle(
+                              color: AppTheme.darkSecondaryTextColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: accent,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            toLabel,
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+    overlay.insert(entry);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        title: ShaderMask(
-          shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
-          child: Text(
-            widget.apiSource == ApiSource.kemono ? 'Kemono' : 'Coomer',
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 26,
-              color: Colors.white,
-              letterSpacing: -0.5,
-            ),
-          ),
-        ),
-        backgroundColor: AppTheme.getBackgroundColor(context),
+        toolbarHeight: 84,
+        backgroundColor: Colors.transparent,
         foregroundColor: AppTheme.getOnSurfaceColor(context),
         elevation: 0,
         scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                (_activeApiSource == ApiSource.kemono
+                        ? AppTheme.primaryColor
+                        : AppTheme.accentColor)
+                    .withValues(alpha: 0.16),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+        titleSpacing: 16,
+        title: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShaderMask(
+              shaderCallback: (bounds) =>
+                  AppTheme.primaryGradient.createShader(bounds),
+              child: const Text(
+                'Post Detail',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 28,
+                  color: Colors.white,
+                  letterSpacing: -0.9,
+                  height: 1,
+                ),
+              ),
+            ),
+            Text(
+              _activeApiSource == ApiSource.kemono
+                  ? 'Viewing from Kemono'
+                  : 'Viewing from Coomer',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.85),
+              ),
+            ),
+          ],
+        ),
         actions: [
+          if (_isSwitchingSource)
+            const Padding(
+              padding: EdgeInsets.only(right: 6),
+              child: Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ),
           // Refresh button with loading indicator
           if (!widget.isFromSavedPosts)
             IconButton(
@@ -300,38 +479,221 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 ],
               ),
             )
-          : RefreshIndicator(
-              onRefresh: _refreshContent,
-              color: AppTheme.primaryColor,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                physics:
-                    const AlwaysScrollableScrollPhysics(), // Enable pull-to-refresh
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildCreatorHeader(),
-                    _buildMediaSection(),
-                    _buildVideoSection(),
-                    _buildAudioSection(),
-                    _buildDownloadLinksSection(),
-                    _buildPostContent(),
-                    if (_currentPost.tags.isNotEmpty) _buildTagsSection(),
-                    _buildCommentsSection(),
-                    const SizedBox(height: 32),
-                  ],
+          : Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppTheme.getBackgroundColor(context),
+                          AppTheme.getBackgroundColor(
+                            context,
+                          ).withValues(alpha: 0.98),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                Positioned(
+                  top: -120,
+                  left: -60,
+                  child: Container(
+                    width: 230,
+                    height: 230,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppTheme.primaryColor.withValues(alpha: 0.12),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 40,
+                  right: -80,
+                  child: Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          AppTheme.accentColor.withValues(alpha: 0.09),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                RefreshIndicator(
+                  onRefresh: _refreshContent,
+                  color: AppTheme.primaryColor,
+                  child: SingleChildScrollView(
+                    controller: _scrollController,
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 10),
+                        _buildSourceControlCard(),
+                        _buildCreatorHeader(),
+                        _buildMediaSection(),
+                        _buildVideoSection(),
+                        _buildAudioSection(),
+                        _buildDownloadLinksSection(),
+                        _buildPostContent(),
+                        if (_currentPost.tags.isNotEmpty) _buildTagsSection(),
+                        _buildCommentsSection(),
+                        const SizedBox(height: 40),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
     );
   }
 
-  Widget _buildCreatorHeader() {
+  Widget _buildSourceControlCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: AppTheme.darkCardColor,
-        border: Border(bottom: BorderSide(color: AppTheme.darkBorderColor)),
+        color: AppTheme.darkCardColor.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.85),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 16,
+            spreadRadius: -8,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.cloud_sync_rounded,
+            size: 18,
+            color: AppTheme.darkSecondaryTextColor,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Switch source and reload instantly',
+              style: TextStyle(
+                color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.95),
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: AppTheme.darkSurfaceColor.withValues(alpha: 0.82),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildApiSourceChip(
+                  source: ApiSource.kemono,
+                  label: 'Kemono',
+                  color: AppTheme.primaryColor,
+                ),
+                const SizedBox(width: 4),
+                _buildApiSourceChip(
+                  source: ApiSource.coomer,
+                  label: 'Coomer',
+                  color: AppTheme.accentColor,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApiSourceChip({
+    required ApiSource source,
+    required String label,
+    required Color color,
+  }) {
+    final isActive = source == _activeApiSource;
+    return GestureDetector(
+      onTap: _isSwitchingSource ? null : () => _switchApiSource(source),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+        decoration: BoxDecoration(
+          gradient: isActive
+              ? LinearGradient(
+                  colors: [
+                    color.withValues(alpha: 0.98),
+                    color.withValues(alpha: 0.72),
+                  ],
+                )
+              : null,
+          color: isActive ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: isActive
+                ? color.withValues(alpha: 0.95)
+                : Colors.transparent,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : AppTheme.darkSecondaryTextColor,
+            fontSize: 11,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCreatorHeader() {
+    final mediaCount =
+        _currentPost.attachments.length + _currentPost.file.length;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.darkCardColor.withValues(alpha: 0.96),
+            AppTheme.darkSurfaceColor.withValues(alpha: 0.92),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.9),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 18,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -360,34 +722,53 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                         _currentPost.user,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 16.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
-                              color: _getServiceColor().withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(4),
+                              color: _getServiceColor().withValues(alpha: 0.16),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _getServiceColor().withValues(
+                                  alpha: 0.35,
+                                ),
+                              ),
                             ),
                             child: Text(
                               _getServiceDisplayName(),
                               style: TextStyle(
                                 color: _getServiceColor(),
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ),
                           const SizedBox(width: 8),
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 12,
+                            color: AppTheme.darkSecondaryTextColor.withValues(
+                              alpha: 0.9,
+                            ),
+                          ),
+                          const SizedBox(width: 3),
                           Text(
                             _formatDate(_currentPost.published.toString()),
-                            style: const TextStyle(
-                              color: AppTheme.darkSecondaryTextColor,
-                              fontSize: 11,
+                            style: TextStyle(
+                              color: AppTheme.darkSecondaryTextColor.withValues(
+                                alpha: 0.95,
+                              ),
+                              fontSize: 11.5,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -405,12 +786,61 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               _currentPost.title,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontSize: 19,
+                fontWeight: FontWeight.w800,
                 height: 1.3,
-                letterSpacing: -0.2,
+                letterSpacing: -0.3,
               ),
             ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildInfoChip(
+                icon: Icons.photo_library_rounded,
+                text: '$mediaCount media',
+              ),
+              _buildInfoChip(
+                icon: Icons.article_rounded,
+                text: _currentPost.content.trim().isEmpty
+                    ? 'No text'
+                    : 'Has text',
+              ),
+              _buildInfoChip(
+                icon: Icons.tag_rounded,
+                text: '${_currentPost.tags.length} tags',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip({required IconData icon, required String text}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppTheme.darkElevatedSurfaceColor.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.75),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppTheme.darkSecondaryTextColor),
+          const SizedBox(width: 5),
+          Text(
+            text,
+            style: const TextStyle(
+              color: AppTheme.darkSecondaryTextColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
@@ -435,8 +865,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               ? mediaItems.take(maxPreviewItems).toList()
               : mediaItems);
 
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.mdPadding),
+    return _buildSectionShell(
+      accentColor: AppTheme.primaryColor,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -475,10 +905,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       if (_isMediaFile(file.name)) {
         final rawPath = file.path;
         final fullUrl = _buildFullUrl(rawPath);
-        final thumbnailUrl = buildThumbnailFromRawPath(
-          rawPath,
-          _currentPost.service,
-        );
+        final thumbnailUrl = buildThumbnailFromRawPath(rawPath);
 
         // Skip audio files - they go to audio section
         if (_isAudioFile(file.name)) continue;
@@ -499,10 +926,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       if (_isMediaFile(attachment.name)) {
         final rawPath = attachment.path;
         final fullUrl = _buildFullUrl(rawPath);
-        final thumbnailUrl = buildThumbnailFromRawPath(
-          rawPath,
-          _currentPost.service,
-        );
+        final thumbnailUrl = buildThumbnailFromRawPath(rawPath);
 
         // Skip audio files - they go to audio section
         if (_isAudioFile(attachment.name)) continue;
@@ -547,10 +971,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         final rawPath = file.path;
         final fullUrl = _buildFullUrl(rawPath);
 
-                final thumbnailUrl = buildThumbnailFromRawPath(
-          rawPath,
-          _currentPost.service,
-        );
+        final thumbnailUrl = buildThumbnailFromRawPath(rawPath);
 
         videoFiles.add({
           'type': 'video',
@@ -567,10 +988,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         final rawPath = attachment.path;
         final fullUrl = _buildFullUrl(rawPath);
 
-                final thumbnailUrl = buildThumbnailFromRawPath(
-          rawPath,
-          _currentPost.service,
-        );
+        final thumbnailUrl = buildThumbnailFromRawPath(rawPath);
 
         videoFiles.add({
           'type': 'video',
@@ -648,14 +1066,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         name.endsWith('.mkv');
   }
 
-  String buildThumbnailFromRawPath(String rawPath, String service) {
+  String buildThumbnailFromRawPath(String rawPath) {
     if (rawPath.isEmpty) return '';
     final clean = rawPath.startsWith('/') ? rawPath : '/$rawPath';
     final thumbnailPath = 'thumbnail/data$clean';
-    final thumbnailUrl =
-        service == 'onlyfans' || service == 'fansly' || service == 'candfans'
-        ? 'https://img.coomer.st/$thumbnailPath'
-        : 'https://img.kemono.cr/$thumbnailPath';
+    final base = _activeApiSource == ApiSource.coomer
+        ? 'https://img.coomer.st'
+        : 'https://img.kemono.cr';
+    final thumbnailUrl = '$base/$thumbnailPath';
     return thumbnailUrl;
   }
 
@@ -688,8 +1106,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         final thumbnailUrl = mediaItem['thumbnail_url'] as String?;
         final displayUrl =
             useThumbnails && thumbnailUrl != null && thumbnailUrl.isNotEmpty
-                ? thumbnailUrl
-                : rawUrl;
+            ? thumbnailUrl
+            : rawUrl;
 
         return GestureDetector(
           onTap: () => _openMediaFullscreen(mediaItem, index),
@@ -918,7 +1336,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           builder: (context) => VideoPlayerScreen(
             videoUrl: mediaItem['url'],
             videoName: mediaItem['name'] ?? 'Video',
-            apiSource: widget.apiSource.name,
+            apiSource: _activeApiSource.name,
           ),
         ),
       );
@@ -929,7 +1347,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           builder: (context) => FullscreenMediaViewer(
             mediaItems: _collectAndSortMedia(),
             initialIndex: index,
-            apiSource: widget.apiSource,
+            apiSource: _activeApiSource,
           ),
         ),
       );
@@ -1068,7 +1486,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       url: videoUrl,
                       height: 200,
                       autoplay: shouldAutoPlay || _activeVideoUrl == videoUrl,
-                      apiSource: widget.apiSource.name,
+                      apiSource: _activeApiSource.name,
                     )
                   : _buildVideoPlaceholder(videoFile),
             ),
@@ -1232,7 +1650,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
-
   Widget _buildVideoPlaceholder(Map<String, dynamic> videoFile) {
     final videoUrl = videoFile['url'] as String;
     final thumbnailUrl = videoFile['thumbnail_url'] as String?;
@@ -1265,7 +1682,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 errorWidget: (context, url, error) => Container(
                   color: Colors.black,
                   child: const Center(
-                    child: Icon(Icons.videocam, color: Colors.white70, size: 48),
+                    child: Icon(
+                      Icons.videocam,
+                      color: Colors.white70,
+                      size: 48,
+                    ),
                   ),
                 ),
               )
@@ -1308,7 +1729,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         builder: (context) => VideoPlayerScreen(
           videoUrl: videoFile['url'],
           videoName: videoFile['name'] ?? 'Video',
-          apiSource: widget.apiSource.name,
+          apiSource: _activeApiSource.name,
         ),
       ),
     );
@@ -1898,51 +2319,95 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     required Color color,
     required BuildContext context,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).brightness == Brightness.dark
-                ? color.withValues(alpha: 0.1)
-                : color.withValues(alpha: 0.05),
-            Theme.of(context).brightness == Brightness.dark
-                ? color.withValues(alpha: 0.05)
-                : color.withValues(alpha: 0.02),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? color.withValues(alpha: 0.2)
-              : color.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: Theme.of(context).brightness == Brightness.dark
-                ? color
-                : _getLightModeColor(color),
-            size: 20,
+    final accent = Theme.of(context).brightness == Brightness.dark
+        ? color
+        : _getLightModeColor(color);
+    return Row(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                accent.withValues(alpha: 0.28),
+                accent.withValues(alpha: 0.1),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: accent.withValues(alpha: 0.28)),
           ),
-          const SizedBox(width: 8),
-          Text(
+          child: Icon(icon, color: accent, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
             title,
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.2,
               color: Theme.of(context).brightness == Brightness.dark
                   ? Colors.white
                   : Colors.grey.shade800,
             ),
           ),
+        ),
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.9),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: accent.withValues(alpha: 0.3),
+                blurRadius: 10,
+                spreadRadius: -4,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSectionShell({
+    required Widget child,
+    required Color accentColor,
+  }) {
+    final accent = Theme.of(context).brightness == Brightness.dark
+        ? accentColor
+        : _getLightModeColor(accentColor);
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+                  AppTheme.darkCardColor.withValues(alpha: 0.98),
+                  AppTheme.darkSurfaceColor.withValues(alpha: 0.94),
+                ]
+              : [
+                  Colors.white,
+                  AppTheme.lightElevatedSurfaceColor.withValues(alpha: 0.95),
+                ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accent.withValues(alpha: 0.18)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: 18,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
+      child: child,
     );
   }
 
@@ -1959,8 +2424,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     final allLinks = collectAllLinks();
     final contentStable = isContentStable(_currentPost.content);
 
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return _buildSectionShell(
+      accentColor: contentStable ? Colors.green : Colors.orange,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2335,7 +2800,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     });
 
     try {
-
       // Clear all caches to force fresh extraction
       _cachedLinks = null;
       _cachedContentHash = null;
@@ -2381,7 +2845,6 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         );
       }
     } catch (e) {
-
       // Show error message
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
@@ -2431,8 +2894,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     // Cache the result
     _cachedLinks = links;
     _cachedContentHash = hash;
-    for (int i = 0; i < links.length; i++) {
-    }
+    for (int i = 0; i < links.length; i++) {}
 
     return links;
   }
@@ -2498,8 +2960,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         links.add(PostLink(url: url, source: 'content', label: url));
       }
     }
-    for (int i = 0; i < links.length; i++) {
-    }
+    for (int i = 0; i < links.length; i++) {}
 
     return links;
   }
@@ -2563,15 +3024,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       return path;
     }
 
-    // Build URL with proper CDN domains
-    String baseUrl;
-    if (_currentPost.service == 'onlyfans' ||
-        _currentPost.service == 'fansly' ||
-        _currentPost.service == 'candfans') {
-      baseUrl = 'https://n2.coomer.st/data';
-    } else {
-      baseUrl = 'https://n1.kemono.cr/data';
-    }
+    // Build URL using active source to prevent cross-domain content mixing.
+    final baseUrl = _activeApiSource == ApiSource.coomer
+        ? 'https://n2.coomer.st/data'
+        : 'https://n1.kemono.cr/data';
 
     // Remove leading slash if present to avoid double slashes
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
@@ -2608,8 +3064,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
     // 🚨 IMPORTANT: Jangan render Content section kalau kosong
     if (cleanContent.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(AppTheme.mdPadding),
+      return _buildSectionShell(
+        accentColor: Colors.indigo,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -2664,8 +3120,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     }
 
     // Normal content rendering
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.mdPadding),
+    return _buildSectionShell(
+      accentColor: Colors.indigo,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2788,8 +3244,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   Widget _buildTagsSection() {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.mdPadding),
+    return _buildSectionShell(
+      accentColor: Colors.orange,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2839,8 +3295,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   Widget _buildCommentsSection() {
-    return Container(
-      padding: const EdgeInsets.all(AppTheme.mdPadding),
+    return _buildSectionShell(
+      accentColor: Colors.blue,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -3004,10 +3460,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                             colors: [
                               Theme.of(context).brightness == Brightness.dark
                                   ? Colors.blue.withValues(alpha: 0.1)
-                                  : Colors.blue.withValues(alpha: 0.05), // Light mode
+                                  : Colors.blue.withValues(
+                                      alpha: 0.05,
+                                    ), // Light mode
                               Theme.of(context).brightness == Brightness.dark
                                   ? Colors.blue.withValues(alpha: 0.05)
-                                  : Colors.blue.withValues(alpha: 0.02), // Light mode
+                                  : Colors.blue.withValues(
+                                      alpha: 0.02,
+                                    ), // Light mode
                             ],
                           ),
                           borderRadius: BorderRadius.circular(8),
@@ -3015,7 +3475,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                             color:
                                 Theme.of(context).brightness == Brightness.dark
                                 ? Colors.blue.withValues(alpha: 0.3)
-                                : Colors.blue.withValues(alpha: 0.2), // Light mode
+                                : Colors.blue.withValues(
+                                    alpha: 0.2,
+                                  ), // Light mode
                           ),
                         ),
                         child: Text(
@@ -3039,20 +3501,25 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   Widget _buildCommentItem(Comment comment) {
-    // DEBUG: Print comment data
-
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.blue.withValues(alpha: 0.05)
-            : Colors.blue.withValues(alpha: 0.02), // Light mode
-        borderRadius: BorderRadius.circular(8),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+                  Colors.blue.withValues(alpha: 0.08),
+                  AppTheme.darkElevatedSurfaceColor.withValues(alpha: 0.72),
+                ]
+              : [Colors.blue.withValues(alpha: 0.03), Colors.white],
+        ),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: Theme.of(context).brightness == Brightness.dark
               ? Colors.blue.withValues(alpha: 0.2)
-              : Colors.blue.withValues(alpha: 0.1), // Light mode
+              : Colors.blue.withValues(alpha: 0.1),
         ),
       ),
       child: Column(
@@ -3067,19 +3534,19 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 decoration: BoxDecoration(
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.blue.withValues(alpha: 0.2)
-                      : Colors.blue.withValues(alpha: 0.1), // Light mode
+                      : Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? Colors.blue.withValues(alpha: 0.4)
-                        : Colors.blue.withValues(alpha: 0.3), // Light mode
+                        : Colors.blue.withValues(alpha: 0.3),
                   ),
                 ),
                 child: Icon(
                   Icons.person,
                   color: Theme.of(context).brightness == Brightness.dark
                       ? Colors.blue
-                      : _getLightModeColor(Colors.blue), // Light mode
+                      : _getLightModeColor(Colors.blue),
                   size: 16,
                 ),
               ),
@@ -3096,8 +3563,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       style: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.blue
-                            : _getLightModeColor(Colors.blue), // Light mode
-                        fontWeight: FontWeight.w600,
+                            : _getLightModeColor(Colors.blue),
+                        fontWeight: FontWeight.w700,
                         fontSize: 14,
                       ),
                     ),
@@ -3106,7 +3573,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       style: TextStyle(
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.grey[400]
-                            : Colors.grey[600], // Light mode
+                            : Colors.grey[600],
                         fontSize: 12,
                       ),
                     ),
@@ -3124,18 +3591,18 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.transparent
-                  : Colors.white.withValues(alpha: 0.5), // Light mode
-              borderRadius: BorderRadius.circular(6),
+                  ? Colors.black.withValues(alpha: 0.16)
+                  : Colors.white.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               comment.content,
               style: TextStyle(
                 color: Theme.of(context).brightness == Brightness.dark
                     ? Colors.white
-                    : Colors.grey.shade800, // Light mode
+                    : Colors.grey.shade800,
                 fontSize: 14,
-                height: 1.4,
+                height: 1.5,
               ),
             ),
           ),
@@ -3248,7 +3715,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       context,
       MaterialPageRoute(
         builder: (context) =>
-            CreatorDetailScreen(creator: creator, apiSource: widget.apiSource),
+            CreatorDetailScreen(creator: creator, apiSource: _activeApiSource),
       ),
     );
   }
@@ -3256,7 +3723,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   /// 🚀 NEW: Build creator avatar widget
   Widget _buildCreatorAvatar() {
     final iconUrl = _buildCreatorIconUrl(
-      apiSource: widget.apiSource,
+      apiSource: _activeApiSource,
       service: _currentPost.service,
       creatorId: _currentPost.user,
     );

@@ -41,7 +41,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.sizeOf(context);
-    final orientation = MediaQuery.orientationOf(context);
     final isCoomer =
         widget.apiSource.toLowerCase() == 'coomer' ||
         widget.videoUrl.toLowerCase().contains('coomer.');

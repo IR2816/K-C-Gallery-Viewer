@@ -49,16 +49,22 @@ class Post {
     ApiSource apiSource, {
     String? kemonoDomain,
     String? coomerDomain,
+    bool forceThumbnail = false,
   }) {
     final domain = apiSource == ApiSource.kemono
-        ? (kemonoDomain ?? 'kemono.cr') // Default to kemono.cr for thumbnails
-        : (coomerDomain ?? 'coomer.st'); // Default to coomer.st for thumbnails
+        ? (kemonoDomain ?? 'kemono.cr')
+        : (coomerDomain ?? 'coomer.st');
     final baseUrl = 'https://img.$domain/thumbnail/data';
 
-    if (attachments.isNotEmpty) {
-      final firstAttachment = attachments.first;
-      final originalPath = firstAttachment.path;
-      if (originalPath.startsWith('http')) return originalPath;
+    if (attachments.isNotEmpty || file.isNotEmpty) {
+      final firstMedia = attachments.isNotEmpty ? attachments.first : file.first;
+      final originalPath = firstMedia.path;
+      
+      if (originalPath.startsWith('http')) {
+        // If it's an external URL and we force thumbnail, we might not have one
+        // unless it's a known re-hosted pattern. For now, return original if not forced.
+        return forceThumbnail ? null : originalPath;
+      }
       if (originalPath.startsWith('//')) return 'https:$originalPath';
 
       // Normalize: API returns "/data/..." but thumbnails live at "/thumbnail/data/..."
@@ -67,144 +73,61 @@ class Post {
           : originalPath;
       final stripped = clean.startsWith('data/') ? clean.substring(5) : clean;
       final fullUrl = '$baseUrl/$stripped';
-      AppLogger.mediaUrl(
-        'Thumbnail',
-        firstAttachment.path,
-        fullUrl,
-        apiSource: apiSource.name,
-        domain: domain,
-      );
-      return fullUrl;
-    }
-    if (file.isNotEmpty) {
-      final firstFile = file.first;
-      final originalPath = firstFile.path;
-      if (originalPath.startsWith('http')) return originalPath;
-      if (originalPath.startsWith('//')) return 'https:$originalPath';
-
-      // Normalize: API returns "/data/..." but thumbnails live at "/thumbnail/data/..."
-      final clean = originalPath.startsWith('/')
-          ? originalPath.substring(1)
-          : originalPath;
-      final stripped = clean.startsWith('data/') ? clean.substring(5) : clean;
-      final fullUrl = '$baseUrl/$stripped';
-      AppLogger.mediaUrl(
-        'Thumbnail',
-        firstFile.path,
-        fullUrl,
-        apiSource: apiSource.name,
-        domain: domain,
-      );
+      
       return fullUrl;
     }
     return null;
   }
 
-  // Check if post has video files
-  bool get hasVideo {
-    final allFiles = [...attachments, ...file];
-    return allFiles.any(
-      (f) =>
-          f.type?.contains('video') == true ||
-          f.name.toLowerCase().endsWith('.mp4') ||
-          f.name.toLowerCase().endsWith('.mov') ||
-          f.name.toLowerCase().endsWith('.avi') ||
-          f.name.toLowerCase().endsWith('.webm'),
-    );
-  }
-
-  // Check if post has image files
-  bool get hasImage {
-    final allFiles = [...attachments, ...file];
-    return allFiles.any(
-      (f) =>
-          f.type?.contains('image') == true ||
-          f.name.toLowerCase().endsWith('.jpg') ||
-          f.name.toLowerCase().endsWith('.jpeg') ||
-          f.name.toLowerCase().endsWith('.png') ||
-          f.name.toLowerCase().endsWith('.gif') ||
-          f.name.toLowerCase().endsWith('.webp'),
-    );
-  }
-
-  // Get first image file for thumbnail
-  PostFile? get firstImage {
-    final allFiles = [...attachments, ...file];
-    try {
-      return allFiles.firstWhere(
-        (f) =>
-            f.type?.contains('image') == true ||
-            f.name.toLowerCase().endsWith('.jpg') ||
-            f.name.toLowerCase().endsWith('.jpeg') ||
-            f.name.toLowerCase().endsWith('.png') ||
-            f.name.toLowerCase().endsWith('.gif') ||
-            f.name.toLowerCase().endsWith('.webp'),
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // Get first video file
-  PostFile? get firstVideo {
-    final allFiles = [...attachments, ...file];
-    try {
-      return allFiles.firstWhere(
-        (f) =>
-            f.type?.contains('video') == true ||
-            f.name.toLowerCase().endsWith('.mp4') ||
-            f.name.toLowerCase().endsWith('.mov') ||
-            f.name.toLowerCase().endsWith('.avi') ||
-            f.name.toLowerCase().endsWith('.webm'),
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
-  // Get appropriate thumbnail URL based on content type
+  // Get appropriate thumbnail URL based on content type and quality
   String? getBestThumbnailUrl(
     ApiSource apiSource, {
     String? kemonoDomain,
     String? coomerDomain,
+    String quality = 'medium',
   }) {
-    // If has image, use first image as thumbnail
-    if (hasImage && firstImage != null) {
-      final domain = apiSource == ApiSource.kemono
-          ? (kemonoDomain ?? 'kemono.cr')
-          : (coomerDomain ?? 'coomer.st');
-      final baseUrl = 'https://img.$domain/thumbnail/data';
+    // Quality levels:
+    // 'low': Strict thumbnail only (img subdomain). If no thumbnail, return placeholder.
+    // 'medium': Prefer thumbnail, fallback to original if thumbnail fails or doesn't exist.
+    // 'high': Original image (n4 subdomain).
 
-      final originalPath = firstImage!.path;
-      if (originalPath.startsWith('http')) return originalPath;
-      if (originalPath.startsWith('//')) return 'https:$originalPath';
+    final isLowQuality = quality == 'low';
+    final isHighQuality = quality == 'high';
 
-      final clean = originalPath.startsWith('/')
-          ? originalPath.substring(1)
-          : originalPath;
-      final stripped = clean.startsWith('data/') ? clean.substring(5) : clean;
-      final fullUrl = '$baseUrl/$stripped';
-
-      AppLogger.mediaUrl(
-        'Image Thumbnail',
-        firstImage!.path,
-        fullUrl,
-        apiSource: apiSource.name,
-        domain: domain,
-      );
-      return fullUrl;
+    if (isHighQuality) {
+      // Return original URL
+      if (file.isNotEmpty) return _buildFullUrl(file.first.path, service);
+      if (attachments.isNotEmpty) return _buildFullUrl(attachments.first.path, service);
+      return null;
     }
 
-    // If only has video, use existing thumbnail method
-    if (hasVideo) {
-      return getThumbnailUrl(
-        apiSource,
-        kemonoDomain: kemonoDomain,
-        coomerDomain: coomerDomain,
-      );
-    }
+    // Try to get thumbnail first
+    final thumb = getThumbnailUrl(
+      apiSource,
+      kemonoDomain: kemonoDomain,
+      coomerDomain: coomerDomain,
+      forceThumbnail: isLowQuality,
+    );
+
+    if (thumb != null) return thumb;
+
+    // If low quality and no thumbnail, return null (caller shows placeholder)
+    if (isLowQuality) return null;
+
+    // Otherwise fallback to original for medium/unknown quality
+    if (file.isNotEmpty) return _buildFullUrl(file.first.path, service);
+    if (attachments.isNotEmpty) return _buildFullUrl(attachments.first.path, service);
 
     return null;
+  }
+
+  String _buildFullUrl(String path, String service) {
+    if (path.startsWith('http')) return path;
+    final domain = (service == 'onlyfans' || service == 'fansly' || service == 'candfans')
+        ? 'n4.coomer.st'
+        : 'n4.kemono.cr';
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return 'https://$domain$cleanPath';
   }
 
   // Get total media count
@@ -239,6 +162,9 @@ class Post {
         )
         .length;
   }
+
+  bool get hasImage => imageCount > 0;
+  bool get hasVideo => videoCount > 0;
 
   Post copyWith({bool? saved}) {
     return Post(

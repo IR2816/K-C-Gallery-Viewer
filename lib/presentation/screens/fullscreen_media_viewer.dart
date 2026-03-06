@@ -270,6 +270,7 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
   }
 
   /// Open video player dari gallery
+  // ignore: unused_element
   void _openVideoPlayer(Map<String, dynamic> mediaItem) {
     Navigator.push(
       context,

@@ -79,36 +79,72 @@ class _SavedScreenState extends State<SavedScreen>
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        backgroundColor: AppTheme.getBackgroundColor(context),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                const Color(0xFFFFB300).withValues(alpha: 0.14),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
         title: Row(
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
+                  colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(10),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.orange.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.bookmark_rounded, color: Colors.white, size: 18),
+              child: const Icon(Icons.bookmarks_rounded, color: Colors.white, size: 20),
             ),
-            const SizedBox(width: 10),
-            ShaderMask(
-              shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
-              ).createShader(bounds),
-              child: const Text(
-                'Collections',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 26,
-                  color: Colors.white,
-                  letterSpacing: -0.5,
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ).createShader(bounds),
+                  child: const Text(
+                    'Collections',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 28,
+                      color: Colors.white,
+                      letterSpacing: -1.0,
+                    ),
+                  ),
                 ),
-              ),
+                Text(
+                  'Saved posts and creators',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.75),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -136,9 +172,49 @@ class _SavedScreenState extends State<SavedScreen>
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [SavedPostsTab(), FavoriteCreatorsTab()],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppTheme.getBackgroundColor(context),
+              AppTheme.getBackgroundColor(context).withValues(alpha: 0.98),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -130,
+              right: -60,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFFFB300).withValues(alpha: 0.07),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 80,
+              left: -70,
+              child: Container(
+                width: 190,
+                height: 190,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFFF8C00).withValues(alpha: 0.05),
+                ),
+              ),
+            ),
+            TabBarView(
+              controller: _tabController,
+              children: const [SavedPostsTab(), FavoriteCreatorsTab()],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -148,13 +224,13 @@ class _SavedScreenState extends State<SavedScreen>
       animation: _tabController,
       builder: (context, _) {
         return Container(
-          height: 38,
+          height: 44,
           decoration: BoxDecoration(
             color: AppTheme.darkCardColor,
-            borderRadius: BorderRadius.circular(AppTheme.pillRadius),
-            border: Border.all(color: AppTheme.darkBorderColor),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppTheme.darkBorderColor.withValues(alpha: 0.5)),
           ),
-          padding: const EdgeInsets.all(3),
+          padding: const EdgeInsets.all(4),
           child: Row(
             children: [
               _buildSegmentTab(0, 'Posts', Icons.photo_library_rounded),
@@ -172,30 +248,40 @@ class _SavedScreenState extends State<SavedScreen>
       child: GestureDetector(
         onTap: () => _tabController.animateTo(index),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
           decoration: BoxDecoration(
             gradient: isSelected
                 ? const LinearGradient(
-                    colors: [Color(0xFFFFB300), Color(0xFFFF6D00)],
+                    colors: [Color(0xFFFFD700), Color(0xFFFF8C00)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   )
                 : null,
-            borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+            borderRadius: BorderRadius.circular(11),
+            boxShadow: isSelected ? [
+              BoxShadow(
+                color: Colors.orange.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ] : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 icon,
-                size: 14,
+                size: 16,
                 color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
                   color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                  fontSize: 14,
                 ),
               ),
             ],
@@ -335,6 +421,7 @@ class _SavedPostsTabState extends State<SavedPostsTab>
     );
   }
 
+  // ignore: unused_element
   String _getServiceDisplayName(String service) {
     switch (service.toLowerCase()) {
       case 'patreon':
@@ -426,156 +513,180 @@ class _SavedPostsTabState extends State<SavedPostsTab>
     final media = _getFirstMedia(post);
     final settings = context.read<SettingsProvider>();
     final imageFit = settings.imageFitMode;
+    final serviceColor = _getServiceColor(post.service);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
+        color: AppTheme.darkCardColor,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PostDetailScreen(
-                  post: post,
-                  apiSource: settings.defaultApiSource,
-                  isFromSavedPosts: true,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PostDetailScreen(
+                    post: post,
+                    apiSource: settings.defaultApiSource,
+                    isFromSavedPosts: true,
+                  ),
                 ),
-              ),
-            );
-          },
-          onLongPress: () => _showPostOptions(post),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
+              );
+            },
+            onLongPress: () => _showPostOptions(post),
             child: Row(
               children: [
-                // Thumbnail
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[800],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: media != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            media['url'],
-                            width: 60,
-                            height: 60,
-                            fit: imageFit,
-                            errorBuilder: (context, error, stackTrace) {
-                              return _buildPlaceholder();
-                            },
-                          ),
-                        )
-                      : _buildPlaceholder(),
-                ),
-                const SizedBox(width: 12),
-
-                // Post info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Text(
-                        post.title.isNotEmpty ? post.title : 'Untitled Post',
-                        style: AppTheme.bodyStyle.copyWith(
-                          color: AppTheme.getOnBackgroundColor(context),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
+                // Immersive Thumbnail
+                Stack(
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.black12,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(18),
+                          bottomLeft: Radius.circular(18),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
-
-                      // Creator and service
-                      Row(
-                        children: [
-                          Text(
-                            post.user,
-                            style: AppTheme.captionStyle.copyWith(
-                              color: AppTheme.getOnSurfaceColor(context),
-                              fontSize: 12,
-                            ),
+                      child: media != null
+                          ? CachedNetworkImage(
+                              imageUrl: media['url'],
+                              fit: imageFit,
+                              placeholder: (context, url) => _buildPlaceholder(),
+                              errorWidget: (context, url, error) => _buildPlaceholder(),
+                            )
+                          : _buildPlaceholder(),
+                    ),
+                    // Service Indicator on Image
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: serviceColor.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Icon(
+                          _getServiceIcon(post.service),
+                          color: Colors.white,
+                          size: 10,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                // Content
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          post.title.isNotEmpty ? post.title : 'Untitled Post',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.2,
                           ),
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 4,
-                              vertical: 1,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getServiceColor(
-                                post.service,
-                              ).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              _getServiceDisplayName(post.service),
-                              style: TextStyle(
-                                color: _getServiceColor(post.service),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w500,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 8,
+                              backgroundColor: serviceColor.withValues(alpha: 0.2),
+                              child: Text(
+                                post.user.isNotEmpty ? post.user[0].toUpperCase() : '?',
+                                style: TextStyle(
+                                  color: serviceColor,
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-
-                      // Saved date
-                      Text(
-                        'Saved on: Today', // Simplified for now
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.4),
-                          fontSize: 10,
+                            const SizedBox(width: 6),
+                            Expanded(
+                              child: Text(
+                                post.user,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-
-                // Actions
+                
+                // Action Menu
                 PopupMenuButton<String>(
                   icon: Icon(
-                    Icons.more_vert,
+                    Icons.more_horiz_rounded,
                     color: Colors.white.withValues(alpha: 0.3),
                     size: 20,
                   ),
                   onSelected: (value) {
                     if (value == 'remove') {
                       context.read<PostsProvider>().toggleSavePost(post);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Post removed')),
-                      );
-                    } else if (value == 'share') {
-                      // TODO: Implement share
                     }
                   },
                   itemBuilder: (context) => [
-                    const PopupMenuItem(
+                    PopupMenuItem(
                       value: 'remove',
-                      child: Text('Remove from Saved'),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                          const SizedBox(width: 8),
+                          Text('Remove', style: TextStyle(color: Colors.redAccent.withValues(alpha: 0.9))),
+                        ],
+                      ),
                     ),
-                    const PopupMenuItem(value: 'share', child: Text('Share')),
                   ],
                 ),
+                const SizedBox(width: 4),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  IconData _getServiceIcon(String service) {
+    switch (service.toLowerCase()) {
+      case 'patreon': return Icons.local_activity_rounded;
+      case 'fanbox': return Icons.pix_rounded;
+      case 'fantia': return Icons.favorite_rounded;
+      default: return Icons.public_rounded;
+    }
   }
 
   Widget _buildPlaceholder() {
@@ -706,9 +817,26 @@ class _SavedPostsTabState extends State<SavedPostsTab>
 
         return Column(
           children: [
-            // Search bar
+            // Modernized Search Bar
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.darkCardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _searchController.text.isNotEmpty 
+                      ? AppTheme.primaryColor.withValues(alpha: 0.4) 
+                      : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: TextField(
                 controller: _searchController,
                 onChanged: (value) {
@@ -720,43 +848,27 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                     });
                   });
                 },
+                style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'Search posts by title or creator...',
-                  hintStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  hintText: 'Search collection...',
+                  hintStyle: TextStyle(color: AppTheme.secondaryTextColor.withValues(alpha: 0.6)),
                   prefixIcon: Icon(
-                    Icons.search,
-                    color: AppTheme.secondaryTextColor,
+                    Icons.search_rounded,
+                    color: _searchController.text.isNotEmpty ? AppTheme.primaryColor : AppTheme.secondaryTextColor,
+                    size: 20,
                   ),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.06),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.06),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  suffixIcon: IconButton(
-                    onPressed: () => _loadSavedPosts(refresh: true),
-                    icon: Icon(
-                      Icons.refresh,
-                      color: AppTheme.secondaryTextColor,
-                    ),
-                    tooltip: 'Refresh',
-                  ),
+                  suffixIcon: _searchController.text.isNotEmpty 
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() { _searchQuery = ''; });
+                        },
+                      )
+                    : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                style: const TextStyle(color: Colors.white),
               ),
             ),
 
@@ -993,156 +1105,142 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
     final serviceColor = _getServiceColor(creator.service);
     final bannerUrl = _buildCreatorBannerUrl(creator);
     final iconUrl = _buildCreatorIconUrl(creator);
-    final favoritesText =
-        creator.fans != null ? '${creator.fans} favorites' : null;
+    final favoritesText = creator.fans != null ? '${creator.fans} favorites' : '${creator.indexed} posts';
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06), width: 1),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 12,
             offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CreatorDetailScreen(
-                  creator: creator,
-                  apiSource: _detectApiSourceForCreator(creator),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: SizedBox(
+          height: 115,
+          child: Stack(
+            children: [
+              // Banner Background
+              Positioned.fill(
+                child: CachedNetworkImage(
+                  imageUrl: bannerUrl,
+                  httpHeaders: _getCoomerHeaders(bannerUrl),
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: serviceColor.withValues(alpha: 0.1),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [serviceColor.withValues(alpha: 0.4), Colors.black],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            );
-          },
-          onLongPress: () => _showCreatorOptions(creator),
-          borderRadius: BorderRadius.circular(12),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              height: 110,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: CachedNetworkImage(
-                      imageUrl: bannerUrl,
-                      httpHeaders: _getCoomerHeaders(bannerUrl),
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: serviceColor.withValues(alpha: 0.15),
-                      ),
-                      errorWidget: (context, url, error) => Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              serviceColor.withValues(alpha: 0.3),
-                              Colors.black.withValues(alpha: 0.6),
-                            ],
-                          ),
-                        ),
-                      ),
+              // Gradient Overlay
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withValues(alpha: 0.2),
+                        Colors.black.withValues(alpha: 0.85),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
                     ),
                   ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.35),
-                            Colors.black.withValues(alpha: 0.7),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 10,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                ),
+              ),
+              // Service Badge & Remove Button
+              Positioned(
+                top: 10,
+                left: 10,
+                right: 10,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: serviceColor.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(6),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         creator.service.toUpperCase(),
                         style: const TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
                         ),
                       ),
                     ),
-                  ),
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: Consumer<CreatorsProvider>(
-                      builder: (context, providers, _) {
-                        return GestureDetector(
-                          onTap: () => _removeCreator(creator),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(
-                              Icons.bookmark_remove,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        );
-                      },
+                    GestureDetector(
+                      onTap: () => _removeCreator(creator),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                        ),
+                        child: const Icon(
+                          Icons.bookmark_remove_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
                     ),
-                  ),
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
+                  ],
+                ),
+              ),
+              
+              // Content (Avatar + Text)
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CreatorDetailScreen(
+                          creator: creator,
+                          apiSource: _detectApiSourceForCreator(creator),
+                        ),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Container(
-                          width: 44,
-                          height: 44,
+                          width: 50,
+                          height: 50,
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.2),
-                            ),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                             child: CachedNetworkImage(
                               imageUrl: iconUrl,
                               httpHeaders: _getCoomerHeaders(iconUrl),
                               fit: BoxFit.cover,
                               errorWidget: (context, url, error) => Center(
                                 child: Text(
-                                  creator.name.isNotEmpty
-                                      ? creator.name[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  creator.name.isNotEmpty ? creator.name[0].toUpperCase() : '?',
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -1152,43 +1250,37 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(
                                 creator.name,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w800,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 2),
                               Text(
-                                favoritesText ??
-                                    '${creator.indexed} posts',
-                                style: const TextStyle(
-                                  color: Colors.white70,
+                                favoritesText,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.7),
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: Colors.white70,
-                          size: 20,
-                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white60, size: 16),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -1205,6 +1297,7 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
     );
   }
 
+  // ignore: unused_element
   void _showCreatorOptions(Creator creator) {
     showModalBottomSheet(
       context: context,
@@ -1490,9 +1583,26 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
 
         return Column(
           children: [
-            // Search bar
+            // Modernized Search Bar for Creators
             Container(
-              margin: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppTheme.darkCardColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _searchController.text.isNotEmpty 
+                      ? AppTheme.primaryColor.withValues(alpha: 0.4) 
+                      : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: TextField(
                 controller: _searchController,
                 onChanged: (value) {
@@ -1504,43 +1614,27 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                     });
                   });
                 },
+                style: const TextStyle(color: Colors.white, fontSize: 14),
                 decoration: InputDecoration(
                   hintText: 'Search creators...',
-                  hintStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  hintStyle: TextStyle(color: AppTheme.secondaryTextColor.withValues(alpha: 0.6)),
                   prefixIcon: Icon(
-                    Icons.search,
-                    color: AppTheme.secondaryTextColor,
+                    Icons.search_rounded,
+                    color: _searchController.text.isNotEmpty ? AppTheme.primaryColor : AppTheme.secondaryTextColor,
+                    size: 20,
                   ),
-                  filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.05),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.06),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.06),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  suffixIcon: IconButton(
-                    onPressed: () => _loadCreators(refresh: true),
-                    icon: Icon(
-                      Icons.refresh,
-                      color: AppTheme.secondaryTextColor,
-                    ),
-                    tooltip: 'Refresh',
-                  ),
+                  suffixIcon: _searchController.text.isNotEmpty 
+                    ? IconButton(
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() { _searchQuery = ''; });
+                        },
+                      )
+                    : null,
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
-                style: const TextStyle(color: Colors.white),
               ),
             ),
 

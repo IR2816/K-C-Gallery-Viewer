@@ -267,7 +267,7 @@ class _CreatorCardState extends State<CreatorCard> with SingleTickerProviderStat
           child: CachedNetworkImage(
             imageUrl: _avatarUrl(),
             fit: BoxFit.cover,
-            placeholder: (_, __) => Container(
+            placeholder: (_, url) => Container(
               color: AppTheme.darkElevatedSurfaceColor,
               child: Center(
                 child: Text(
@@ -282,7 +282,7 @@ class _CreatorCardState extends State<CreatorCard> with SingleTickerProviderStat
                 ),
               ),
             ),
-            errorWidget: (_, __, ___) => Container(
+            errorWidget: (_, url, error) => Container(
               color: AppTheme.darkElevatedSurfaceColor,
               child: Center(
                 child: Text(

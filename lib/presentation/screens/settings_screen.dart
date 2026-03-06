@@ -65,98 +65,148 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: AppBar(
-        backgroundColor: AppTheme.getBackgroundColor(context),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        title: ShaderMask(
-          shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
-          child: const Text(
-            'Settings',
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              fontSize: 26,
-              color: Colors.white,
-              letterSpacing: -0.5,
+        centerTitle: false,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                AppTheme.primaryColor.withValues(alpha: 0.14),
+                Colors.transparent,
+              ],
             ),
           ),
         ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ShaderMask(
+              shaderCallback: (bounds) =>
+                  AppTheme.primaryGradient.createShader(bounds),
+              child: const Text(
+                'Settings',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 32,
+                  color: Colors.white,
+                  letterSpacing: -1.2,
+                ),
+              ),
+            ),
+            Text(
+              'Customize your experience',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.75),
+              ),
+            ),
+          ],
+        ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        children: [
-          // ── Profile / App Card ──────────────────
-          _buildAppProfileCard(),
-          const SizedBox(height: 24),
-          // Appearance Section
-          _buildSectionTitle('Appearance'),
-          _buildAppearanceSection(),
-
-          const SizedBox(height: 24),
-
-          // Content & Filters Section (PALING PENTING)
-          _buildSectionTitle('Content & Filters'),
-          _buildContentFiltersSection(),
-
-          const SizedBox(height: 24),
-
-          // Feed Layout Section
-          _buildSectionTitle('Feed Layout'),
-          _buildFeedLayoutSection(),
-
-          const SizedBox(height: 24),
-
-          // Media & Playback Section
-          _buildSectionTitle('Media & Playback'),
-          _buildMediaPlaybackSection(),
-
-          const SizedBox(height: 24),
-
-          // Download Settings Section
-          _buildSectionTitle('Download Settings'),
-          _buildDownloadSettingsSection(),
-
-          const SizedBox(height: 24),
-
-          // Data & Storage Section
-          _buildSectionTitle('Data & Storage'),
-          _buildDataStorageSection(),
-
-          const SizedBox(height: 24),
-
-          // About Section
-          _buildSectionTitle('About'),
-          _buildAboutSection(),
-
-          const SizedBox(height: 32),
-        ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppTheme.getBackgroundColor(context),
+              AppTheme.getBackgroundColor(context).withValues(alpha: 0.98),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -120,
+              left: -60,
+              child: Container(
+                width: 220,
+                height: 220,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 50,
+              right: -70,
+              child: Container(
+                width: 190,
+                height: 190,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.secondaryAccent.withValues(alpha: 0.06),
+                ),
+              ),
+            ),
+            ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: [
+                _buildAppProfileCard(),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Appearance'),
+                _buildAppearanceSection(),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Content & Filters'),
+                _buildContentFiltersSection(),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Feed Layout'),
+                _buildFeedLayoutSection(),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Media & Playback'),
+                _buildMediaPlaybackSection(),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Download Settings'),
+                _buildDownloadSettingsSection(),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Data & Storage'),
+                _buildDataStorageSection(),
+                const SizedBox(height: 24),
+                _buildSectionTitle('About'),
+                _buildAboutSection(),
+                const SizedBox(height: 32),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.only(left: 20, right: 16, top: 24, bottom: 12),
       child: Row(
         children: [
           Container(
-            width: 3,
-            height: 16,
+            width: 4,
+            height: 18,
             decoration: BoxDecoration(
               gradient: AppTheme.primaryGradient,
               borderRadius: BorderRadius.circular(4),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          ShaderMask(
-            shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-                letterSpacing: 0.3,
-              ),
+          const SizedBox(width: 10),
+          Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.8),
+              letterSpacing: 1.2,
             ),
           ),
         ],
@@ -164,67 +214,103 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildAppProfileCard() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget _buildSettingsCard(BuildContext context, Widget child) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.primaryColor.withValues(alpha: 0.20),
-            AppTheme.darkCardColor,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppTheme.lgRadius),
+        color: AppTheme.darkCardColor,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: AppTheme.primaryColor.withValues(alpha: 0.25),
+          color: Colors.white.withValues(alpha: 0.05),
         ),
-        boxShadow: [AppTheme.getElevatedShadow()],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: child,
+      ),
+    );
+  }
+
+  Widget _buildAppProfileCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCardColor,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.05),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          // App icon
+          // App icon with glow
           Container(
-            width: 64,
-            height: 64,
+            width: 72,
+            height: 72,
             decoration: BoxDecoration(
               gradient: AppTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [AppTheme.getGlowShadow(AppTheme.primaryColor)],
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  spreadRadius: 2,
+                ),
+              ],
             ),
-            child: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 32),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: Colors.white,
+              size: 36,
+            ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 20),
           // App info
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'K/C Gallery',
+                  'K/C Viewer',
                   style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                    color: AppTheme.darkPrimaryTextColor,
-                    letterSpacing: -0.3,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 22,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: const Text(
-                    'Kemono & Coomer Viewer',
+                    'PREMIUM EDITION',
                     style: TextStyle(
                       color: AppTheme.primaryLightColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.0,
                     ),
                   ),
                 ),
@@ -239,19 +325,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildAppearanceSection() {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: Column(
+        return _buildSettingsCard(
+          context,
+          Column(
             children: [
               // Theme Selection
               ListTile(
-                leading: const Icon(Icons.palette_outlined, size: 20),
-                title: const Text('Theme'),
+                leading: const Icon(Icons.palette_rounded, size: 20, color: Colors.indigoAccent),
+                title: const Text('Theme', style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text(_getThemeDisplayName(themeProvider.themeMode)),
                 trailing: DropdownButton<ThemeMode>(
                   value: themeProvider.themeMode,
@@ -260,32 +341,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       themeProvider.setThemeMode(newTheme);
                     }
                   },
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   items: const [
-                    DropdownMenuItem(
-                      value: ThemeMode.light,
-                      child: Text('Light'),
-                    ),
-                    DropdownMenuItem(
-                      value: ThemeMode.dark,
-                      child: Text('Dark'),
-                    ),
-                    DropdownMenuItem(
-                      value: ThemeMode.system,
-                      child: Text('System'),
-                    ),
+                    DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
+                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
+                    DropdownMenuItem(value: ThemeMode.system, child: Text('System')),
                   ],
                 ),
               ),
 
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
 
               // Text Size
               ListTile(
-                leading: const Icon(Icons.text_fields_outlined, size: 20),
-                title: const Text('Text Size'),
-                subtitle: Text(
-                  _getTextSizeDisplayName(themeProvider.textScale),
-                ),
+                leading: const Icon(Icons.format_size_rounded, size: 20, color: Colors.amber),
+                title: const Text('Text Size', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(_getTextSizeDisplayName(themeProvider.textScale)),
                 trailing: DropdownButton<double>(
                   value: themeProvider.textScale,
                   onChanged: (double? newTextScale) {
@@ -293,6 +365,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       themeProvider.setTextScale(newTextScale);
                     }
                   },
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   items: const [
                     DropdownMenuItem(value: 0.85, child: Text('Small')),
                     DropdownMenuItem(value: 1.0, child: Text('Normal')),
@@ -310,49 +384,38 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildContentFiltersSection() {
     return Consumer2<SettingsProvider, TagFilterProvider>(
       builder: (context, settingsProvider, tagFilterProvider, child) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: Column(
+        return _buildSettingsCard(
+          context,
+          Column(
             children: [
               // Blocked Tags
               ListTile(
-                leading: const Icon(Icons.block_outlined, size: 20),
-                title: const Text('Blocked Tags'),
-                subtitle: Text('${tagFilterProvider.blacklist.length} tags'),
-                trailing: const Icon(Icons.chevron_right, size: 20),
+                leading: const Icon(Icons.tag_rounded, size: 20, color: Colors.blueAccent),
+                title: const Text('Blocked Tags', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text('${tagFilterProvider.blacklist.length} tags currently blocked'),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                 onTap: () => _showBlockedTagsScreen(),
               ),
 
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
 
               // Hide NSFW
               SwitchListTile(
-                secondary: const Icon(
-                  Icons.no_adult_content_outlined,
-                  size: 20,
-                ),
-                title: const Text('Hide NSFW'),
-                subtitle: const Text('Hide explicit content'),
+                secondary: const Icon(Icons.explicit_rounded, size: 20, color: Colors.redAccent),
+                title: const Text('Hide NSFW Content', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Safely browse in public'),
+                activeThumbColor: AppTheme.primaryColor,
                 value: settingsProvider.hideNsfw,
-                onChanged: (bool value) {
-                  settingsProvider.setHideNsfw(value);
-                },
+                onChanged: (bool value) => settingsProvider.setHideNsfw(value),
               ),
 
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
 
               // Services Filter
               ListTile(
-                leading: const Icon(Icons.filter_list_outlined, size: 20),
-                title: const Text('Services'),
-                subtitle: Text(
-                  _getServiceDisplayName(settingsProvider.defaultApiSource),
-                ),
+                leading: const Icon(Icons.hub_rounded, size: 20, color: Colors.teal),
+                title: const Text('Preferred Source', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(_getServiceDisplayName(settingsProvider.defaultApiSource)),
                 trailing: DropdownButton<ApiSource>(
                   value: settingsProvider.defaultApiSource,
                   onChanged: (ApiSource? newSource) {
@@ -360,6 +423,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       settingsProvider.setDefaultApiSource(newSource);
                     }
                   },
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   items: ApiSource.values.map((source) {
                     return DropdownMenuItem(
                       value: source,
@@ -378,23 +443,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildFeedLayoutSection() {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: Column(
+        return _buildSettingsCard(
+          context,
+          Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.view_quilt_outlined, size: 20),
-                title: const Text('Latest Card Style'),
-                subtitle: Text(
-                  _getPostCardStyleDisplayName(
-                    settingsProvider.latestPostCardStyle,
-                  ),
-                ),
+                leading: const Icon(Icons.grid_view_rounded, size: 20, color: Colors.orangeAccent),
+                title: const Text('Latest Card Style', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(_getPostCardStyleDisplayName(settingsProvider.latestPostCardStyle)),
                 trailing: DropdownButton<String>(
                   value: settingsProvider.latestPostCardStyle,
                   onChanged: (String? newStyle) {
@@ -402,16 +458,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       settingsProvider.setLatestPostCardStyle(newStyle);
                     }
                   },
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   items: const [
                     DropdownMenuItem(value: 'rich', child: Text('Rich')),
                     DropdownMenuItem(value: 'compact', child: Text('Compact')),
                   ],
                 ),
               ),
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
               ListTile(
-                leading: const Icon(Icons.grid_view_outlined, size: 20),
-                title: const Text('Latest Columns'),
+                leading: const Icon(Icons.view_column_rounded, size: 20, color: Colors.cyanAccent),
+                title: const Text('Layout Columns', style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: Text('${settingsProvider.latestPostsColumns} columns'),
                 trailing: DropdownButton<int>(
                   value: settingsProvider.latestPostsColumns,
@@ -420,6 +478,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       settingsProvider.setLatestPostsColumns(newValue);
                     }
                   },
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   items: const [
                     DropdownMenuItem(value: 1, child: Text('1')),
                     DropdownMenuItem(value: 2, child: Text('2')),
@@ -437,48 +497,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildMediaPlaybackSection() {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: Column(
+        return _buildSettingsCard(
+          context,
+          Column(
             children: [
               // Autoplay Video
               SwitchListTile(
-                secondary: const Icon(Icons.play_disabled_outlined, size: 20),
-                title: const Text('Autoplay Video'),
-                subtitle: const Text('Auto-play videos in posts'),
+                secondary: const Icon(Icons.slow_motion_video_rounded, size: 20, color: Colors.purpleAccent),
+                title: const Text('Autoplay Videos', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Play automatically in feed'),
+                activeThumbColor: AppTheme.primaryColor,
                 value: settingsProvider.autoplayVideo,
-                onChanged: (bool value) {
-                  settingsProvider.setAutoplayVideo(value);
-                },
+                onChanged: (bool value) => settingsProvider.setAutoplayVideo(value),
               ),
 
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
 
               // Use Thumbnails
               SwitchListTile(
-                secondary: const Icon(Icons.image_outlined, size: 20),
-                title: const Text('Use Thumbnails'),
-                subtitle: const Text('Save data on media previews'),
+                secondary: const Icon(Icons.image_aspect_ratio_rounded, size: 20, color: Colors.greenAccent),
+                title: const Text('Optimize Images', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Use thumbnails to save data'),
+                activeThumbColor: AppTheme.primaryColor,
                 value: settingsProvider.loadThumbnails,
-                onChanged: (bool value) {
-                  settingsProvider.setLoadThumbnails(value);
-                },
+                onChanged: (bool value) => settingsProvider.setLoadThumbnails(value),
               ),
 
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
 
               // Image Fit Mode
               ListTile(
-                leading: const Icon(Icons.fit_screen_outlined, size: 20),
-                title: const Text('Image Fit Mode'),
-                subtitle: Text(
-                  _getImageFitDisplayName(settingsProvider.imageFitMode),
-                ),
+                leading: const Icon(Icons.aspect_ratio_rounded, size: 20, color: Colors.blueAccent),
+                title: const Text('Image Fit Mode', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text(_getImageFitDisplayName(settingsProvider.imageFitMode)),
                 trailing: DropdownButton<BoxFit>(
                   value: settingsProvider.imageFitMode,
                   onChanged: (BoxFit? newFit) {
@@ -486,6 +537,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       settingsProvider.setImageFitMode(newFit);
                     }
                   },
+                  underline: const SizedBox(),
+                  icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   items: const [
                     DropdownMenuItem(value: BoxFit.cover, child: Text('Cover')),
                     DropdownMenuItem(value: BoxFit.contain, child: Text('Fit')),
@@ -503,97 +556,40 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildDownloadSettingsSection() {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, _) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Theme.of(context).dividerColor),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        return _buildSettingsCard(
+          context,
+          Column(
             children: [
-              // Section Header
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.download,
-                      color: AppTheme.primaryColor,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Download Settings',
-                      style: AppTheme.titleStyle.copyWith(
-                        color: AppTheme.getOnSurfaceColor(context),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const Divider(height: 1),
-
               // Download Method
               ListTile(
-                leading: Icon(Icons.browser_updated, color: Colors.blue),
-                title: Text(
-                  'Download Method',
-                  style: AppTheme.bodyStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context),
-                  ),
-                ),
-                subtitle: Text(
-                  'Secure browser (Custom Tabs)',
-                  style: AppTheme.captionStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
-                  ),
-                ),
+                leading: const Icon(Icons.rocket_launch_rounded, color: Colors.blueAccent, size: 20),
+                title: const Text('Download Engine', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('High-speed secure fetching'),
                 trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
                   ),
-                  child: Text(
-                    'Recommended',
-                    style: AppTheme.captionStyle.copyWith(
-                      color: Colors.green,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: const Text(
+                    'OPTIMIZED',
+                    style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.w800),
                   ),
                 ),
                 onTap: () => _showDownloadMethodInfo(context),
               ),
 
+              const Divider(height: 1, indent: 56),
+
               // Browser Info
               ListTile(
-                leading: Icon(
-                  Icons.info_outline,
-                  color: AppTheme.secondaryTextColor,
-                ),
-                title: Text(
-                  'Browser Compatibility',
-                  style: AppTheme.bodyStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context),
-                  ),
-                ),
-                subtitle: Text(
-                  'Chrome Custom Tabs / SFSafariViewController',
-                  style: AppTheme.captionStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
-                  ),
-                ),
+                leading: const Icon(Icons.open_in_new_rounded, color: Colors.blue, size: 20),
+                title: const Text('External Handlers', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: const Text('Chrome Tabs / Safari Support'),
+                trailing: const Icon(Icons.info_outline_rounded, size: 18),
                 onTap: () => _showBrowserInfo(context),
               ),
-
-              const SizedBox(height: 8),
             ],
           ),
         );
@@ -813,27 +809,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildDataStorageSection() {
     return Consumer2<SettingsProvider, DataUsageTracker>(
       builder: (context, settingsProvider, dataUsageTracker, child) {
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: AppTheme.getSurfaceColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-          ),
-          child: Column(
+        return _buildSettingsCard(
+          context,
+          Column(
             children: [
               // Data Usage Monitor
               ListTile(
-                leading: Icon(
-                  Icons.data_usage,
-                  size: 20,
-                  color: AppTheme.primaryColor,
-                ),
-                title: const Text('Data Usage Monitor'),
-                subtitle: Text(
-                  '${dataUsageTracker.getUsageInMB(dataUsageTracker.sessionUsage).toStringAsFixed(2)} MB this session',
-                ),
-                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                leading: const Icon(Icons.analytics_rounded, size: 20, color: Colors.blueAccent),
+                title: const Text('Data Usage Dashboard', style: TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text('${dataUsageTracker.getUsageInMB(dataUsageTracker.sessionUsage).toStringAsFixed(2)} MB in current session'),
+                trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                 onTap: () {
                   Navigator.push(
                     context,
@@ -844,24 +829,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
 
-              const Divider(height: 1),
+              const Divider(height: 1, indent: 56),
 
               // Cache Size Info
               ListTile(
-                leading: const Icon(Icons.storage_outlined, size: 20),
-                title: const Text('Cache Size'),
+                leading: const Icon(Icons.cleaning_services_rounded, size: 20, color: Colors.amber),
+                title: const Text('Disk Cache', style: TextStyle(fontWeight: FontWeight.w600)),
                 subtitle: FutureBuilder<String>(
                   future: _cacheSizeFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Text('Calculating...');
+                      return const Text('Calculating usage...');
                     }
-                    return Text(snapshot.data ?? 'Unknown');
+                    return Text('${snapshot.data ?? '0 B'} currently stored');
                   },
                 ),
                 trailing: TextButton(
                   onPressed: () => _clearCache(),
-                  child: const Text('Clear'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.redAccent,
+                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                  child: const Text('CLEAR'),
                 ),
               ),
             ],
@@ -872,64 +861,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildAboutSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-      ),
-      child: Column(
+    return _buildSettingsCard(
+      context,
+      Column(
         children: [
           // Version
-          ListTile(
-            leading: const Icon(Icons.info_outline, size: 20),
-            title: const Text('Version'),
-            subtitle: const Text('1.0.3'),
+          const ListTile(
+            leading: Icon(Icons.verified_rounded, size: 20, color: Colors.greenAccent),
+            title: Text('Build Version', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text('1.0.3-premium'),
           ),
 
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
 
           // Data Source
-          ListTile(
-            leading: const Icon(Icons.source_outlined, size: 20),
-            title: const Text('Data Source'),
-            subtitle: const Text('Kemono / Coomer'),
+          const ListTile(
+            leading: Icon(Icons.cloud_sync_rounded, size: 20, color: Colors.blueAccent),
+            title: Text('Data Sources', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text('Kemono & Coomer Decentralized API'),
           ),
 
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
 
           // Credits: Official API
           ListTile(
-            leading: const Icon(Icons.link, size: 20),
-            title: const Text('Kemono/Coomer Official API'),
-            subtitle: const Text('kemono.cr/documentation/api'),
-            trailing: const Icon(Icons.open_in_new, size: 18),
-            onTap: () => _openLink(
-              'https://kemono.cr/documentation/api',
-            ),
+            leading: const Icon(Icons.auto_stories_rounded, size: 20, color: Colors.orangeAccent),
+            title: const Text('API Documentation', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: const Text('kemono.cr/documentation'),
+            trailing: const Icon(Icons.open_in_new_rounded, size: 14),
+            onTap: () => _openLink('https://kemono.cr/documentation/api'),
           ),
 
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
 
           // Credits: Search by Name API
           ListTile(
-            leading: const Icon(Icons.link, size: 20),
-            title: const Text('Search by Name API'),
-            subtitle: const Text('github.com/mbahArip/kemono-api'),
-            trailing: const Icon(Icons.open_in_new, size: 18),
-            onTap: () => _openLink(
-              'https://github.com/mbahArip/kemono-api',
-            ),
+            leading: const Icon(Icons.code_rounded, size: 20, color: Colors.cyanAccent),
+            title: const Text('Core Engine', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: const Text('Powered by mbahArip API'),
+            trailing: const Icon(Icons.open_in_new_rounded, size: 14),
+            onTap: () => _openLink('https://github.com/mbahArip/kemono-api'),
           ),
 
-          const Divider(height: 1),
+          const Divider(height: 1, indent: 56),
 
           // Disclaimer
-          ListTile(
-            leading: const Icon(Icons.gavel_outlined, size: 20),
-            title: const Text('Disclaimer'),
-            subtitle: const Text('This app is a viewer, not a content owner'),
+          const ListTile(
+            leading: Icon(Icons.gavel_rounded, size: 20, color: Colors.blueGrey),
+            title: Text('Legal Disclaimer', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: Text('Educational viewer & proxy gateway'),
           ),
         ],
       ),

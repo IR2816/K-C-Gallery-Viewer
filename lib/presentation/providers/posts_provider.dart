@@ -62,6 +62,7 @@ class PostsProvider with ChangeNotifier {
     String service,
     String creatorId, {
     bool refresh = false,
+    ApiSource? apiSource,
   }) async {
     AppLogger.debug('🔍 DEBUG: PostsProvider.loadCreatorPosts called');
     AppLogger.debug(
@@ -84,19 +85,12 @@ class PostsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      // Determine API source based on service
-      ApiSource apiSource;
-      if (service == 'fansly' ||
-          service == 'onlyfans' ||
-          service == 'candfans') {
-        apiSource = ApiSource.coomer;
-      } else {
-        apiSource = ApiSource.kemono;
-      }
-      _currentApiSource = apiSource;
+      // Determine API source based on explicit selection first, then service fallback.
+      final effectiveApiSource = apiSource ?? _getApiSourceForService(service);
+      _currentApiSource = effectiveApiSource;
 
       // AUTO-RETRY MECHANISM for Coomer services
-      int maxRetries = (apiSource == ApiSource.coomer)
+      int maxRetries = (effectiveApiSource == ApiSource.coomer)
           ? 5
           : 2; // More retries for Coomer
       int retryCount = 0;
@@ -107,7 +101,7 @@ class PostsProvider with ChangeNotifier {
             service,
             creatorId,
             offset: _offset,
-            apiSource: apiSource,
+            apiSource: effectiveApiSource,
           );
 
           if (newPosts.isEmpty) {
@@ -125,12 +119,12 @@ class PostsProvider with ChangeNotifier {
 
           if (retryCount > maxRetries) {
             // Final attempt failed - set error
-            _error = _getErrorMessage(e, apiSource, retryCount);
+            _error = _getErrorMessage(e, effectiveApiSource, retryCount);
             break;
           }
 
           // Exponential backoff for Coomer, linear for others
-          int delayMs = (apiSource == ApiSource.coomer)
+          int delayMs = (effectiveApiSource == ApiSource.coomer)
               ? 1000 *
                     (1 << (retryCount - 1)) // 1s, 2s, 4s, 8s, 16s
               : 500 * retryCount; // 0.5s, 1s, 1.5s
@@ -317,7 +311,9 @@ class PostsProvider with ChangeNotifier {
           break;
         } catch (e) {
           retryCount++;
-          AppLogger.debug('🔍 DEBUG: Latest posts load attempt $retryCount failed: $e');
+          AppLogger.debug(
+            '🔍 DEBUG: Latest posts load attempt $retryCount failed: $e',
+          );
 
           // Check if we should continue retrying
           if (retryCount > maxRetries) {
@@ -341,7 +337,9 @@ class PostsProvider with ChangeNotifier {
 
           if (!isRetryable) {
             _error = _getErrorMessage(e, effectiveApiSource, retryCount);
-            AppLogger.debug('🔍 DEBUG: Non-retryable error, stopping retries: $_error');
+            AppLogger.debug(
+              '🔍 DEBUG: Non-retryable error, stopping retries: $_error',
+            );
             shouldRetry = false;
             break;
           }
@@ -581,7 +579,9 @@ class PostsProvider with ChangeNotifier {
             postId,
             apiSource: effectiveApiSource,
           );
-          AppLogger.debug('🔍 DEBUG: Repository returned single post: ${post.id}');
+          AppLogger.debug(
+            '🔍 DEBUG: Repository returned single post: ${post.id}',
+          );
 
           // Replace or add the post to the current list
           final existingIndex = _posts.indexWhere((p) => p.id == postId);
@@ -603,7 +603,9 @@ class PostsProvider with ChangeNotifier {
           break;
         } catch (e) {
           retryCount++;
-          AppLogger.debug('🔍 DEBUG: Single post load attempt $retryCount failed: $e');
+          AppLogger.debug(
+            '🔍 DEBUG: Single post load attempt $retryCount failed: $e',
+          );
 
           // Check if we should continue retrying
           if (retryCount > maxRetries) {
@@ -627,7 +629,9 @@ class PostsProvider with ChangeNotifier {
 
           if (!isRetryable) {
             _error = _getErrorMessage(e, effectiveApiSource, retryCount);
-            AppLogger.debug('🔍 DEBUG: Non-retryable error, stopping retries: $_error');
+            AppLogger.debug(
+              '🔍 DEBUG: Non-retryable error, stopping retries: $_error',
+            );
             shouldRetry = false;
             break;
           }

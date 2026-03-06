@@ -284,6 +284,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
   }
 
   /// 🚀 NEW: Navigate to Discord Search Screen
+  // ignore: unused_element
   void _navigateToDiscordSearch() {
     HapticFeedback.lightImpact();
 
@@ -368,6 +369,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
         : _kemonoServices;
   }
 
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
@@ -377,61 +379,134 @@ class _SearchScreenDualState extends State<SearchScreenDual>
           return Scaffold(
             backgroundColor: AppTheme.getBackgroundColor(context),
             appBar: AppBar(
-              backgroundColor: AppTheme.getBackgroundColor(context),
+              backgroundColor: Colors.transparent,
               elevation: 0,
               scrolledUnderElevation: 0,
-              title: ShaderMask(
-                shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
-                child: const Text(
-                  'Discover',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 26,
-                    color: Colors.white,
-                    letterSpacing: -0.5,
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      AppTheme.primaryColor.withValues(alpha: 0.15),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
               ),
-              bottom: PreferredSize(
-                preferredSize: const Size.fromHeight(44),
-                child: Container(
-                  height: 44,
-                  alignment: Alignment.centerLeft,
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    indicator: const UnderlineTabIndicator(
-                      borderSide: BorderSide(color: AppTheme.primaryColor, width: 3),
-                      insets: EdgeInsets.symmetric(horizontal: 8),
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+                    child: const Text(
+                      'Discover',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 32,
+                        color: Colors.white,
+                        letterSpacing: -1.2,
+                        height: 1,
+                      ),
                     ),
-                    labelColor: AppTheme.primaryColor,
-                    unselectedLabelColor: AppTheme.darkSecondaryTextColor,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
-                    tabs: const [
-                      Tab(icon: Icon(Icons.person_search_rounded, size: 16), text: 'By Name'),
-                      Tab(icon: Icon(Icons.tag_rounded, size: 16), text: 'By ID'),
-                    ],
                   ),
-                ),
+                  Text(
+                    'Explore creators and communities',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.7),
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            body: Column(
-              children: [
-                _buildApiSourceSelector(context),
-                Expanded(
-                  child: TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildNameSearchTab(context),
-                      _buildIdSearchTab(context),
-                    ],
+              actions: [
+                Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.darkCardColor.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppTheme.darkBorderColor.withValues(alpha: 0.5)),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.help_outline_rounded, size: 20),
+                    onPressed: () => _showSearchHelp(context),
+                    visualDensity: VisualDensity.compact,
                   ),
                 ),
               ],
+              bottom: PreferredSize(
+                preferredSize: const Size.fromHeight(60),
+                child: Container(
+                  height: 60,
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: TabBar(
+                    controller: _tabController,
+                    indicator: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    ),
+                    dividerColor: Colors.transparent,
+                    labelColor: AppTheme.primaryColor,
+                    unselectedLabelColor: AppTheme.darkSecondaryTextColor,
+                    labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -0.2),
+                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: -0.2),
+                    tabs: const [
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.person_search_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('By Name'),
+                          ],
+                        ),
+                      ),
+                      Tab(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.tag_rounded, size: 18),
+                            SizedBox(width: 8),
+                            Text('By ID'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            body: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppTheme.getBackgroundColor(context).withValues(alpha: 0.8),
+                    AppTheme.getBackgroundColor(context),
+                  ],
+                ),
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 8),
+                  _buildApiSourceSelector(context),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildNameSearchTab(context),
+                        _buildIdSearchTab(context),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
+
         },
       ),
     );
@@ -439,39 +514,32 @@ class _SearchScreenDualState extends State<SearchScreenDual>
 
   Widget _buildApiSourceSelector(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(
-        children: [
-          Text(
-            'Source',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.darkSecondaryTextColor,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: AppTheme.darkCardColor.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.darkBorderColor.withValues(alpha: 0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppTheme.darkCardColor,
-                borderRadius: BorderRadius.circular(AppTheme.pillRadius),
-                border: Border.all(color: AppTheme.darkBorderColor),
-              ),
-              padding: const EdgeInsets.all(3),
-              child: Row(
-                children: [
-                  _buildApiSourceButton(ApiSource.kemono),
-                  _buildApiSourceButton(ApiSource.coomer),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
+        child: Row(
+          children: [
+            _buildApiSourceButton(ApiSource.kemono),
+            const SizedBox(width: 6),
+            _buildApiSourceButton(ApiSource.coomer),
+          ],
+        ),
       ),
     );
   }
+
 
   Widget _buildApiSourceButton(ApiSource apiSource) {
     final isSelected = _selectedApiSource == apiSource;
@@ -530,51 +598,69 @@ class _SearchScreenDualState extends State<SearchScreenDual>
         return Column(
           children: [
             // Search Bar
-            Container(
-              margin: const EdgeInsets.all(AppTheme.mdPadding),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.mdRadius),
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: TextField(
-                controller: _nameSearchController,
-                focusNode: _nameFocusNode,
-                style: AppTheme.bodyStyle.copyWith(
-                  color: Theme.of(context).colorScheme.onSurface,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                decoration: BoxDecoration(
+                  color: AppTheme.darkCardColor,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: _nameSearchController.text.isNotEmpty
+                        ? AppTheme.primaryColor.withValues(alpha: 0.8)
+                        : AppTheme.darkBorderColor,
+                    width: 2.0,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (_nameSearchController.text.isNotEmpty ? AppTheme.primaryColor : Colors.black)
+                          .withValues(alpha: 0.15),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                decoration: InputDecoration(
-                  hintText: 'Search creator by name...',
-                  hintStyle: AppTheme.bodyStyle.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                child: TextField(
+                  controller: _nameSearchController,
+                  focusNode: _nameFocusNode,
+                  onChanged: (_) => _onNameSearchChanged(),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
-                  prefixIcon: Icon(
-                    Icons.search,
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  decoration: InputDecoration(
+                    hintText: 'Search creator by name...',
+                    hintStyle: TextStyle(
+                      color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.5),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    prefixIcon: Container(
+                      padding: const EdgeInsets.all(12),
+                      child: Icon(
+                        Icons.search_rounded,
+                        color: _nameSearchController.text.isNotEmpty
+                            ? AppTheme.primaryColor
+                            : AppTheme.darkSecondaryTextColor,
+                        size: 24,
+                      ),
+                    ),
+                    suffixIcon: _nameSearchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                            onPressed: () {
+                              _nameSearchController.clear();
+                              _onNameSearchChanged();
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
                   ),
-                  suffixIcon: _nameSearchController.text.isNotEmpty
-                      ? IconButton(
-                          onPressed: () {
-                            _nameSearchController.clear();
-                            _onNameSearchChanged();
-                          },
-                          icon: Icon(
-                            Icons.clear,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurface.withValues(alpha: 0.6),
-                          ),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.all(AppTheme.mdPadding),
                 ),
               ),
             ),
+            const SizedBox(height: 16),
 
             // Content
             Expanded(child: _buildNameSearchContent(context, provider)),
@@ -582,209 +668,228 @@ class _SearchScreenDualState extends State<SearchScreenDual>
         );
       },
     );
+
   }
 
   Widget _buildIdSearchTab(BuildContext context) {
-    return Consumer<CreatorsProvider>(
-      builder: (context, provider, _) {
+    return Consumer2<CreatorsProvider, SettingsProvider>(
+      builder: (context, provider, settingsProvider, _) {
+        final currentServices = _getCurrentServices();
+        final services = currentServices
+            .map((service) => service['id'] as String)
+            .toList();
+        final history = settingsProvider.searchHistory;
+
         return Column(
           children: [
-            // API Source Selector for ID Search
-            Container(
-              margin: const EdgeInsets.all(AppTheme.mdPadding),
-              child: Row(
-                children: [
-                  Text(
-                    'Service:',
-                    style: AppTheme.captionStyle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  const SizedBox(width: AppTheme.smSpacing),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppTheme.smPadding,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(AppTheme.smRadius),
-                        border: Border.all(
-                          color: Theme.of(context).dividerColor,
-                        ),
-                      ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedService,
-                          isExpanded: true,
-                          style: AppTheme.bodyStyle.copyWith(
-                            color: Theme.of(context).colorScheme.onSurface,
-                          ),
-                          dropdownColor: Theme.of(context).colorScheme.surface,
-                          items: _getCurrentServices().map((service) {
-                            return DropdownMenuItem<String>(
-                              value: service['id'],
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    service['icon'],
-                                    color: service['color'],
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(service['name']),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedService = value;
+            SizedBox(
+              height: 56,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: services.length,
+                itemBuilder: (context, index) {
+                  final service = services[index];
+                  final serviceData = currentServices.firstWhere(
+                    (item) => item['id'] == service,
+                    orElse: () => {
+                      'id': service,
+                      'name': service,
+                      'icon': Icons.hub_rounded,
+                    },
+                  );
+                  final isSelected = _selectedService == service;
+                  final serviceColor = _getServiceColor(service);
 
-                                // 🚀 NEW: Auto-detect Discord service
-                                if (value == 'discord') {
-                                  _navigateToDiscordSearch();
-                                }
-                              });
-                            }
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Search Bar
-            Container(
-              margin: const EdgeInsets.all(AppTheme.mdPadding),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(AppTheme.mdRadius),
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _idSearchController,
-                    focusNode: _idFocusNode,
-                    style: AppTheme.bodyStyle.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: 'Search creator by ID (min 3 chars)...',
-                      hintStyle: AppTheme.bodyStyle.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                      prefixIcon: Icon(
-                        Icons.tag,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                      suffixIcon: _idSearchController.text.isNotEmpty
-                          ? IconButton(
-                              onPressed: () {
-                                _idSearchController.clear();
-                                _onIdSearchChanged();
-                              },
-                              icon: Icon(
-                                Icons.clear,
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurface.withValues(alpha: 0.6),
-                              ),
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.all(AppTheme.mdPadding),
-                    ),
-                  ),
-                  // Search History
-                  Consumer<SettingsProvider>(
-                    builder: (context, settingsProvider, _) {
-                      final history = settingsProvider.searchHistory;
-                      if (history.isEmpty) return const SizedBox.shrink();
-
-                      return Container(
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: () {
+                        if (_selectedService == service) return;
+                        HapticFeedback.selectionClick();
+                        setState(() => _selectedService = service);
+                        final query = _idSearchController.text.trim();
+                        if (query.length >= 3) {
+                          _searchCreatorsById(query);
+                        }
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 240),
+                        curve: Curves.easeOutCubic,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: AppTheme.mdPadding,
+                          horizontal: 12,
+                          vertical: 8,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? serviceColor.withValues(alpha: 0.15)
+                              : AppTheme.darkCardColor.withValues(alpha: 0.55),
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: isSelected
+                                ? serviceColor.withValues(alpha: 0.85)
+                                : AppTheme.darkBorderColor.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const SizedBox(height: 8),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Recent Searches',
-                                  style: AppTheme.captionStyle.copyWith(
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () =>
-                                      settingsProvider.clearSearchHistory(),
-                                  child: Text(
-                                    'Clear',
-                                    style: AppTheme.captionStyle.copyWith(
-                                      color: AppTheme.primaryColor,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                            Icon(
+                              serviceData['icon'] as IconData? ??
+                                  Icons.hub_rounded,
+                              size: 16,
+                              color: isSelected
+                                  ? serviceColor
+                                  : AppTheme.darkSecondaryTextColor,
                             ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 4,
-                              children: history.take(5).map((query) {
-                                return InputChip(
-                                  label: Text(
-                                    query,
-                                    style: AppTheme.captionStyle.copyWith(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  backgroundColor: Theme.of(
-                                    context,
-                                  ).colorScheme.surface,
-                                  onPressed: () {
-                                    _idSearchController.text = query;
-                                    _onIdSearchChanged();
-                                    _idFocusNode.unfocus();
-                                  },
-                                  deleteIcon: Icon(
-                                    Icons.close,
-                                    size: 16,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                                  ),
-                                  onDeleted: () => settingsProvider
-                                      .removeFromSearchHistory(query),
-                                );
-                              }).toList(),
+                            const SizedBox(width: 6),
+                            Text(
+                              serviceData['name'] as String? ?? service,
+                              style: TextStyle(
+                                color: isSelected
+                                    ? serviceColor
+                                    : AppTheme.darkSecondaryTextColor,
+                                fontSize: 12,
+                                fontWeight: isSelected
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
                             ),
                           ],
                         ),
-                      );
-                    },
-                  ),
-                ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-
-            // Content
+            const SizedBox(height: 10),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                decoration: BoxDecoration(
+                  color: AppTheme.darkCardColor,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: _idSearchController.text.isNotEmpty
+                        ? AppTheme.primaryColor.withValues(alpha: 0.75)
+                        : AppTheme.darkBorderColor,
+                    width: 1.8,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          (_idSearchController.text.isNotEmpty
+                                  ? AppTheme.primaryColor
+                                  : Colors.black)
+                              .withValues(alpha: 0.12),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: TextField(
+                  controller: _idSearchController,
+                  focusNode: _idFocusNode,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Search by creator ID or keyword...',
+                    hintStyle: TextStyle(
+                      color: AppTheme.darkSecondaryTextColor.withValues(
+                        alpha: 0.55,
+                      ),
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.tag_rounded,
+                      color: AppTheme.primaryColor,
+                    ),
+                    suffixIcon: _idSearchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                            onPressed: () {
+                              _idSearchController.clear();
+                              _onIdSearchChanged();
+                              setState(() {});
+                            },
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (value) {
+                    final query = value.trim();
+                    if (query.length >= 3) {
+                      _searchCreatorsById(query);
+                      settingsProvider.addToSearchHistory(query);
+                    }
+                  },
+                ),
+              ),
+            ),
+            if (history.isNotEmpty && _idSearchController.text.trim().isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Recent Searches',
+                          style: AppTheme.captionStyle.copyWith(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: settingsProvider.clearSearchHistory,
+                          child: Text(
+                            'Clear',
+                            style: AppTheme.captionStyle.copyWith(
+                              color: AppTheme.primaryColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      children: history.take(6).map((query) {
+                        return InputChip(
+                          label: Text(query),
+                          onPressed: () {
+                            _idSearchController.text = query;
+                            _onIdSearchChanged();
+                            _idFocusNode.unfocus();
+                            setState(() {});
+                          },
+                          onDeleted: () =>
+                              settingsProvider.removeFromSearchHistory(query),
+                          deleteIcon: Icon(
+                            Icons.close_rounded,
+                            size: 14,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurface.withValues(alpha: 0.65),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 8),
             Expanded(child: _buildIdSearchContent(context, provider)),
           ],
         );
@@ -979,61 +1084,148 @@ class _SearchScreenDualState extends State<SearchScreenDual>
   }
 
   Widget _buildCreatorTile(BuildContext context, Creator creator, int index) {
+    final service = creator.service.toLowerCase();
+    final bannerUrl = _buildCreatorBannerUrl(service, creator.id);
+    final iconUrl = _buildCreatorIconUrl(service, creator.id);
+    final serviceColor = _getServiceColor(creator.service);
+
     return Container(
-      margin: const EdgeInsets.only(bottom: AppTheme.smSpacing),
+      margin: const EdgeInsets.only(bottom: AppTheme.mdSpacing),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppTheme.mdRadius),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(AppTheme.mdPadding),
-        leading: CircleAvatar(
-          radius: 20,
-          backgroundColor: _getServiceColor(creator.service),
-          child: Text(
-            creator.name.isNotEmpty ? creator.name[0].toUpperCase() : '?',
-            style: AppTheme.captionStyle.copyWith(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        title: Text(
-          creator.name,
-          style: AppTheme.titleStyle.copyWith(
-            color: Theme.of(context).colorScheme.onSurface,
-            fontSize: 14,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
           children: [
-            const SizedBox(height: 2),
-            Text(
-              creator.service.toUpperCase(),
-              style: AppTheme.captionStyle.copyWith(
-                color: _getServiceColor(creator.service),
-                fontWeight: FontWeight.w600,
+            // Banner Background
+            Positioned.fill(
+              child: CachedNetworkImage(
+                imageUrl: bannerUrl,
+                httpHeaders: _getCoomerHeaders(bannerUrl),
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(
+                  color: serviceColor.withValues(alpha: 0.1),
+                ),
+                errorWidget: (context, url, error) => Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [serviceColor.withValues(alpha: 0.4), Colors.black],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              'ID: ${creator.id}',
-              style: AppTheme.captionStyle.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
+            // Dark Gradient Overlay
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.8),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                ),
+              ),
+            ),
+            // Content
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _navigateToCreatorDetail(creator),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppTheme.mdPadding),
+                  child: Row(
+                    children: [
+                      // Creator Icon
+                      Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: CachedNetworkImage(
+                            imageUrl: iconUrl,
+                            httpHeaders: _getCoomerHeaders(iconUrl),
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => Icon(
+                              Icons.person,
+                              color: Colors.white.withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppTheme.mdSpacing),
+                      // Creator Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              creator.name,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: serviceColor.withValues(alpha: 0.8),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    creator.service.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'ID: ${creator.id}',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 14),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
         ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          size: 16,
-          color: Theme.of(context).colorScheme.onSurface,
-        ),
-        onTap: () => _navigateToCreatorDetail(creator),
       ),
     );
   }
@@ -1124,116 +1316,125 @@ class _SearchScreenDualState extends State<SearchScreenDual>
     final serviceColor = _getServiceColor(searchResult.service);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppTheme.mdSpacing),
+      margin: const EdgeInsets.only(bottom: AppTheme.lgSpacing),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
-        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.15),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 15,
             offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            if (service == 'discord') {
-              _openDiscordCreatorFromSearch(searchResult);
-              return;
-            }
-            if (creator != null) {
-              HapticFeedback.lightImpact();
-              Navigator.of(context).pushNamed('/creator', arguments: creator);
-            }
-          },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: SizedBox(
-              height: 110,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: CachedNetworkImage(
-                      imageUrl: bannerUrl,
-                      httpHeaders: _getCoomerHeaders(bannerUrl),
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: serviceColor.withValues(alpha: 0.15),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: SizedBox(
+          height: 120,
+          child: Stack(
+            children: [
+              // Banner Background
+              Positioned.fill(
+                child: CachedNetworkImage(
+                  imageUrl: bannerUrl,
+                  httpHeaders: _getCoomerHeaders(bannerUrl),
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(
+                    color: serviceColor.withValues(alpha: 0.1),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [serviceColor.withValues(alpha: 0.4), Colors.black],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      errorWidget: (context, url, error) => Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              serviceColor.withValues(alpha: 0.3),
-                              Colors.black.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ),
+              ),
+              // More complex gradient overlay for better text readability
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withValues(alpha: 0.1),
+                        Colors.black.withValues(alpha: 0.4),
+                        Colors.black.withValues(alpha: 0.85),
+                      ],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.0, 0.4, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              // Service Badge (Top Right)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: serviceColor.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    searchResult.service.toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ),
+              // Content
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    if (service == 'discord') {
+                      _openDiscordCreatorFromSearch(searchResult);
+                      return;
+                    }
+                    if (creator != null) {
+                      HapticFeedback.lightImpact();
+                      Navigator.of(context).pushNamed('/creator', arguments: creator);
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        // Avatar Container with border
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 2,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 10,
+                              ),
                             ],
                           ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.35),
-                            Colors.black.withValues(alpha: 0.7),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 10,
-                    left: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: serviceColor.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        searchResult.service.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 12,
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.2),
-                            ),
-                          ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(14),
                             child: CachedNetworkImage(
                               imageUrl: iconUrl,
                               httpHeaders: _getCoomerHeaders(iconUrl),
@@ -1241,22 +1442,25 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                               errorWidget: (context, url, error) => const Icon(
                                 Icons.person,
                                 color: Colors.white70,
+                                size: 30,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
+                        // Text Info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
                               Text(
                                 searchResult.name,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: -0.2,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1266,27 +1470,26 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                                 searchResult.fans != null
                                     ? '${searchResult.fans} favorites'
                                     : 'ID: ${searchResult.id}',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
                         ),
                         const Icon(
-                          Icons.chevron_right,
-                          color: Colors.white70,
-                          size: 20,
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white60,
+                          size: 18,
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -1393,6 +1596,24 @@ class _SearchScreenDualState extends State<SearchScreenDual>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showSearchHelp(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Search Help'),
+        content: const Text(
+          'Use "By Name" for indexed creator search, or "By ID" when you already know creator ID and service.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }

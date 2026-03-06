@@ -1,6 +1,7 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -68,6 +69,8 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
   String? _mediaCacheKey;
   final Map<String, Future<Size>> _imageSizeCache = {};
   Future<List<_LinkedAccount>>? _linkedAccountsFuture;
+  late ApiSource _activeApiSource;
+  bool _isSwitchingSource = false;
 
   // State preservation
   @override
@@ -76,6 +79,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
   @override
   void initState() {
     super.initState();
+    _activeApiSource = widget.apiSource;
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(_handleTabChange);
     _loadCreatorPosts();
@@ -123,7 +127,6 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
   // SIMPLIFIED - Single responsibility: just trigger provider
   Future<void> _loadCreatorPosts() async {
     try {
-
       final postsProvider = Provider.of<PostsProvider>(context, listen: false);
       postsProvider.clearPosts();
       _cachedMediaItems = [];
@@ -133,9 +136,39 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
         widget.creator.service,
         widget.creator.id,
         refresh: true,
+        apiSource: _activeApiSource,
       );
     } catch (e) {
       // Error handling done by provider, no local state needed
+    }
+  }
+
+  Future<void> _switchApiSource(ApiSource targetSource) async {
+    if (_isSwitchingSource || targetSource == _activeApiSource) {
+      return;
+    }
+
+    HapticFeedback.lightImpact();
+    _showDomainTransitionAnimation(_activeApiSource, targetSource);
+    final postsProvider = context.read<PostsProvider>();
+
+    setState(() {
+      _isSwitchingSource = true;
+      _activeApiSource = targetSource;
+      _cachedMediaItems = [];
+      _mediaCacheKey = null;
+      _linkedAccountsFuture = _fetchLinkedAccounts();
+    });
+
+    try {
+      postsProvider.clearPosts();
+      await _loadCreatorPosts();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSwitchingSource = false;
+        });
+      }
     }
   }
 
@@ -145,7 +178,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       final rawLinks = await repository.getCreatorLinks(
         widget.creator.service,
         widget.creator.id,
-        apiSource: widget.apiSource,
+        apiSource: _activeApiSource,
       );
       return rawLinks
           .whereType<Map>()
@@ -154,6 +187,95 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     } catch (_) {
       return [];
     }
+  }
+
+  void _showDomainTransitionAnimation(ApiSource from, ApiSource to) {
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+
+    final fromLabel = from == ApiSource.kemono ? 'Kemono' : 'Coomer';
+    final toLabel = to == ApiSource.kemono ? 'Kemono' : 'Coomer';
+    final accent = to == ApiSource.kemono
+        ? AppTheme.primaryColor
+        : const Color(0xFFFF2D70);
+
+    entry = OverlayEntry(
+      builder: (context) => IgnorePointer(
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 460),
+          tween: Tween(begin: 0, end: 1),
+          curve: Curves.easeOutCubic,
+          onEnd: () => entry.remove(),
+          builder: (context, value, child) {
+            return ColoredBox(
+              color: Colors.black.withValues(alpha: 0.18 * (1 - value)),
+              child: Center(
+                child: Opacity(
+                  opacity: (1 - (value - 0.65).clamp(0, 0.35) / 0.35).clamp(
+                    0,
+                    1,
+                  ),
+                  child: Transform.scale(
+                    scale: 0.92 + (0.08 * value),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.darkCardColor.withValues(alpha: 0.95),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: accent.withValues(alpha: 0.55),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: accent.withValues(alpha: 0.28),
+                            blurRadius: 16,
+                            spreadRadius: -8,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            fromLabel,
+                            style: const TextStyle(
+                              color: AppTheme.darkSecondaryTextColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_forward_rounded,
+                            color: accent,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            toLabel,
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    overlay.insert(entry);
   }
 
   // PERFORMANCE OPTIMIZATION - Cache media items once per posts snapshot
@@ -329,7 +451,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       return path;
     }
 
-    final domain = widget.apiSource == ApiSource.coomer
+    final domain = _activeApiSource == ApiSource.coomer
         ? 'https://n2.coomer.st'
         : 'https://kemono.cr';
 
@@ -338,7 +460,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
 
   String _buildThumbnailUrl(String path) {
     final clean = path.startsWith('/') ? path : '/$path';
-    final base = widget.apiSource == ApiSource.coomer
+    final base = _activeApiSource == ApiSource.coomer
         ? 'https://img.coomer.st'
         : 'https://img.kemono.cr';
     return '$base/thumbnail/data$clean';
@@ -411,64 +533,96 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       foregroundColor: AppTheme.getOnSurfaceColor(context),
       elevation: 0,
       scrolledUnderElevation: 0,
-      expandedHeight: 200, // Banner (120) + AppBar space (80)
+      expandedHeight: 238,
       leading: IconButton(
-        icon: Icon(
-          Icons.arrow_back,
-          color: AppTheme.getOnSurfaceColor(context),
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.3),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
         ),
         onPressed: () => Navigator.pop(context),
       ),
-      // âŒ REMOVE: Title di AppBar (double dengan FlexibleSpaceBar)
       actions: [
-        // Bookmark Button (only main action in AppBar)
+        if (_isSwitchingSource)
+          const Padding(
+            padding: EdgeInsets.only(right: 8),
+            child: Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppTheme.primaryColor,
+                ),
+              ),
+            ),
+          ),
+        // Bookmark Button
         Consumer<CreatorsProvider>(
           builder: (context, creatorsProvider, child) {
-            // Check if creator is in favorites list
             final isFavorited = creatorsProvider.favoriteCreators.contains(
               widget.creator.id,
             );
             return IconButton(
-              icon: Icon(
-                isFavorited ? Icons.bookmark : Icons.bookmark_border,
-                color: isFavorited
-                    ? AppTheme.primaryColor
-                    : AppTheme.getOnSurfaceColor(context),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isFavorited ? Icons.bookmark : Icons.bookmark_border,
+                  color: isFavorited ? AppTheme.primaryColor : Colors.white,
+                  size: 20,
+                ),
               ),
               onPressed: () => _toggleBookmark(creatorsProvider),
-              tooltip: isFavorited ? 'Remove from Saved' : 'Add to Saved',
             );
           },
         ),
 
-        // Open in Browser (utility action)
+        // Open in Browser
         IconButton(
-          icon: Icon(
-            Icons.open_in_browser,
-            color: AppTheme.getOnSurfaceColor(context),
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.open_in_browser,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
           onPressed: _openCreatorInBrowser,
-          tooltip: 'Open in Browser',
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(
-          left: 80,
-          bottom: 16,
-          right: 16,
-        ),
+        titlePadding: const EdgeInsets.only(left: 88, bottom: 20, right: 16),
         title: ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
             colors: [Colors.white, Colors.white70],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ).createShader(bounds),
           child: Text(
             widget.creator.name,
             style: const TextStyle(
               color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 20,
-              letterSpacing: -0.5,
-              shadows: [Shadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2))],
+              fontWeight: FontWeight.w900,
+              fontSize: 22,
+              letterSpacing: -0.8,
+              shadows: [
+                Shadow(
+                  color: Colors.black54,
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -476,27 +630,107 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
         ),
         background: Stack(
           children: [
-            // ðŸš€ NEW: Creator Banner sebagai background
             _buildCreatorBanner(),
 
-            // Gradient overlay untuk text readability
+            // Immersive Gradient Overlay
             Container(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
+                    Colors.black.withValues(alpha: 0.4),
                     Colors.transparent,
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.black.withValues(alpha: 0.6),
+                    Colors.black.withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.8),
                   ],
+                  stops: const [0.0, 0.4, 0.6, 1.0],
                 ),
               ),
             ),
 
-            // ðŸš€ NEW: Creator Avatar di flexible space
-            Positioned(left: 16, bottom: 8, child: _buildCreatorAvatar()),
+            // Avatar with glow
+            Positioned(left: 16, bottom: 12, child: _buildCreatorAvatar()),
+            Positioned(right: 16, bottom: 18, child: _buildApiSourceSwitcher()),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildApiSourceSwitcher() {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCardColor.withValues(alpha: 0.88),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildApiSourceChip(
+            source: ApiSource.kemono,
+            label: 'Kemono',
+            color: AppTheme.primaryColor,
+          ),
+          const SizedBox(width: 4),
+          _buildApiSourceChip(
+            source: ApiSource.coomer,
+            label: 'Coomer',
+            color: AppTheme.accentColor,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApiSourceChip({
+    required ApiSource source,
+    required String label,
+    required Color color,
+  }) {
+    final isActive = source == _activeApiSource;
+    return GestureDetector(
+      onTap: _isSwitchingSource ? null : () => _switchApiSource(source),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          gradient: isActive
+              ? LinearGradient(
+                  colors: [
+                    color.withValues(alpha: 0.98),
+                    color.withValues(alpha: 0.72),
+                  ],
+                )
+              : null,
+          color: isActive ? null : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isActive
+                ? color.withValues(alpha: 0.95)
+                : Colors.transparent,
+          ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    spreadRadius: -8,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isActive ? Colors.white : AppTheme.darkSecondaryTextColor,
+            fontSize: 11,
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -506,21 +740,77 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     return SliverPersistentHeader(
       pinned: true,
       delegate: _TabBarDelegate(
-        TabBar(
-          controller: _tabController,
-          labelColor: AppTheme.primaryColor,
-          unselectedLabelColor: AppTheme.darkSecondaryTextColor,
-          indicator: const UnderlineTabIndicator(
-            borderSide: BorderSide(color: AppTheme.primaryColor, width: 3),
-            insets: EdgeInsets.symmetric(horizontal: 16),
+        Container(
+          color: AppTheme.getBackgroundColor(context),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Center(
+            child: Container(
+              width: MediaQuery.of(context).size.width * 0.85,
+              height: 46,
+              decoration: BoxDecoration(
+                color: AppTheme.darkCardColor,
+                borderRadius: BorderRadius.circular(25),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TabBar(
+                controller: _tabController,
+                dividerColor: Colors.transparent,
+                indicatorColor: Colors.transparent,
+                labelColor: Colors.white,
+                unselectedLabelColor: AppTheme.darkSecondaryTextColor,
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicator: BoxDecoration(
+                  gradient: AppTheme.primaryGradient,
+                  borderRadius: BorderRadius.circular(25),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                labelStyle: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                  letterSpacing: 0.5,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+                tabs: const [
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.grid_view_rounded, size: 16),
+                        SizedBox(width: 8),
+                        Text('POSTS'),
+                      ],
+                    ),
+                  ),
+                  Tab(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.photo_library_rounded, size: 16),
+                        SizedBox(width: 8),
+                        Text('MEDIA'),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          indicatorColor: AppTheme.primaryColor,
-          labelStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-          unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
-          tabs: const [
-            Tab(icon: Icon(Icons.grid_view_rounded, size: 20), text: 'Posts'),
-            Tab(icon: Icon(Icons.photo_library_rounded, size: 20), text: 'Media'),
-          ],
         ),
       ),
     );
@@ -529,7 +819,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
   /// ðŸš€ UPDATED: Build creator banner widget (untuk FlexibleSpaceBar)
   Widget _buildCreatorBanner() {
     final bannerUrl = _buildCreatorBannerUrl(
-      apiSource: widget.apiSource,
+      apiSource: _activeApiSource,
       service: widget.creator.service,
       creatorId: widget.creator.id,
     );
@@ -590,7 +880,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
   /// 🚀 NEW: Build creator avatar widget
   Widget _buildCreatorAvatar() {
     final iconUrl = _buildCreatorIconUrl(
-      apiSource: widget.apiSource,
+      apiSource: _activeApiSource,
       service: widget.creator.service,
       creatorId: widget.creator.id,
     );
@@ -598,24 +888,28 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(color: AppTheme.darkCardColor, width: 3),
+        border: Border.all(color: Colors.white, width: 3),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.5),
+            blurRadius: 12,
+            spreadRadius: 2,
           ),
         ],
       ),
       child: CircleAvatar(
-        radius: 26,
+        radius: 32,
         backgroundColor: AppTheme.darkCardColor,
         backgroundImage: CachedNetworkImageProvider(
           iconUrl,
           headers: _getCoomerHeaders(iconUrl),
         ),
         onBackgroundImageError: (error, stackTrace) {},
-        child: const Icon(Icons.person, color: AppTheme.darkSecondaryTextColor, size: 24),
+        child: const Icon(
+          Icons.person,
+          color: AppTheme.darkSecondaryTextColor,
+          size: 32,
+        ),
       ),
     );
   }
@@ -752,32 +1046,36 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
             if (_linkedAccountsFuture != null)
               SliverToBoxAdapter(child: _buildLinkedAccountsSection()),
 
-            // Simple header info (no fake pagination)
             SliverToBoxAdapter(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.article_outlined,
-                      size: 20,
-                      color: AppTheme.primaryColor,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _buildPostsHeaderText(
-                          visiblePosts.length,
-                          postsProvider.posts.length,
-                          postsProvider.hasMore,
-                        ),
-                        style: AppTheme.getCaptionStyle(
-                          context,
-                        ).copyWith(color: AppTheme.getOnSurfaceColor(context)),
-                      ),
-                    ),
-                  ],
+              child: _buildCreatorOverviewCard(
+                title: 'Post Stream',
+                subtitle: _buildPostsSummaryText(
+                  visiblePosts.length,
+                  postsProvider.posts.length,
+                  postsProvider.hasMore,
                 ),
+                accentColor: _activeApiSource == ApiSource.kemono
+                    ? AppTheme.primaryColor
+                    : AppTheme.accentColor,
+                chips: [
+                  _buildOverviewChip(
+                    icon: Icons.article_rounded,
+                    label: '${visiblePosts.length} visible',
+                  ),
+                  _buildOverviewChip(
+                    icon: Icons.visibility_off_rounded,
+                    label:
+                        '${(postsProvider.posts.length - visiblePosts.length).clamp(0, 9999)} hidden',
+                  ),
+                  _buildOverviewChip(
+                    icon: postsProvider.hasMore
+                        ? Icons.bolt_rounded
+                        : Icons.done_all_rounded,
+                    label: postsProvider.hasMore
+                        ? 'Auto loading'
+                        : 'Fully loaded',
+                  ),
+                ],
               ),
             ),
 
@@ -809,6 +1107,148 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildCreatorOverviewCard({
+    required String title,
+    required String subtitle,
+    required Color accentColor,
+    required List<Widget> chips,
+  }) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.darkCardColor.withValues(alpha: 0.96),
+            AppTheme.darkSurfaceColor.withValues(alpha: 0.92),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.85),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 18,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accentColor.withValues(alpha: 0.28),
+                      accentColor.withValues(alpha: 0.12),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: accentColor.withValues(alpha: 0.4)),
+                ),
+                child: Icon(
+                  Icons.dashboard_customize_rounded,
+                  size: 20,
+                  color: accentColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: AppTheme.darkSecondaryTextColor.withValues(
+                          alpha: 0.95,
+                        ),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: accentColor.withValues(alpha: 0.35),
+                  ),
+                ),
+                child: Text(
+                  _activeApiSource == ApiSource.kemono ? 'KEMONO' : 'COOMER',
+                  style: TextStyle(
+                    color: accentColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(spacing: 8, runSpacing: 8, children: chips),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverviewChip({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppTheme.darkElevatedSurfaceColor.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.75),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppTheme.darkSecondaryTextColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.darkSecondaryTextColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -930,28 +1370,11 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
         if (links.isEmpty) return const SizedBox.shrink();
 
         return Container(
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          margin: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.link,
-                    size: 18,
-                    color: AppTheme.primaryColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Linked Accounts',
-                    style: AppTheme.getTitleStyle(context).copyWith(
-                      color: AppTheme.getOnSurfaceColor(context),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
+              _buildSectionTitle('Linked Accounts'),
               const SizedBox(height: 8),
               Column(
                 children: links
@@ -965,6 +1388,15 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     );
   }
 
+  Widget _buildSectionTitle(String title) {
+    return Text(
+      title,
+      style: AppTheme.getTitleStyle(
+        context,
+      ).copyWith(fontWeight: FontWeight.w700),
+    );
+  }
+
   Widget _buildLinkedAccountCard(_LinkedAccount link) {
     final serviceColor = _getServiceColor(link.service);
     final bannerUrl = _buildLinkedBannerUrl(link.service, link.id);
@@ -974,71 +1406,72 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
         : link.name;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.darkCardColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 10,
+            blurRadius: 12,
             offset: const Offset(0, 6),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () {
-            if (link.service.toLowerCase() == 'discord') {
-              final serverName = link.name.isNotEmpty
-                  ? link.name
-                  : (link.publicId ?? link.id);
-              final server = DiscordServer(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              if (link.service.toLowerCase() == 'discord') {
+                final serverName = link.name.isNotEmpty
+                    ? link.name
+                    : (link.publicId ?? link.id);
+                final server = DiscordServer(
+                  id: link.id,
+                  name: serverName,
+                  indexed: DateTime.now(),
+                  updated: DateTime.now(),
+                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => DiscordChannelListScreen(server: server),
+                  ),
+                );
+                return;
+              }
+              final creator = Creator(
                 id: link.id,
-                name: serverName,
-                indexed: DateTime.now(),
-                updated: DateTime.now(),
+                service: link.service,
+                name: link.name.isNotEmpty
+                    ? link.name
+                    : (link.publicId ?? link.id),
+                indexed: 0,
+                updated: DateTime.now().millisecondsSinceEpoch ~/ 1000,
               );
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => DiscordChannelListScreen(server: server),
+                  builder: (_) => CreatorDetailScreen(
+                    creator: creator,
+                    apiSource: _apiSourceForService(link.service),
+                  ),
                 ),
               );
-              return;
-            }
-            final creator = Creator(
-              id: link.id,
-              service: link.service,
-              name: link.name.isNotEmpty ? link.name : (link.publicId ?? link.id),
-              indexed: 0,
-              updated: DateTime.now().millisecondsSinceEpoch ~/ 1000,
-            );
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => CreatorDetailScreen(
-                  creator: creator,
-                  apiSource: _apiSourceForService(link.service),
-                ),
-              ),
-            );
-          },
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            },
             child: SizedBox(
-              height: 96,
+              height: 100, // Adjusted for premium look
               child: Stack(
                 children: [
+                  // Banner Background
                   Positioned.fill(
                     child: CachedNetworkImage(
                       imageUrl: bannerUrl,
                       httpHeaders: _getCoomerHeaders(bannerUrl),
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(
-                        color: serviceColor.withValues(alpha: 0.15),
-                      ),
                       errorWidget: (context, url, error) => Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -1046,107 +1479,131 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                             end: Alignment.bottomRight,
                             colors: [
                               serviceColor.withValues(alpha: 0.3),
-                              Colors.black.withValues(alpha: 0.6),
+                              AppTheme.darkCardColor,
                             ],
                           ),
                         ),
                       ),
                     ),
                   ),
+
+                  // Overlay Gradient
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
                           colors: [
-                            Colors.black.withValues(alpha: 0.35),
-                            Colors.black.withValues(alpha: 0.7),
+                            Colors.black.withValues(alpha: 0.8),
+                            Colors.black.withValues(alpha: 0.4),
+                            Colors.black.withValues(alpha: 0.1),
                           ],
+                          stops: const [0.0, 0.4, 0.8],
                         ),
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 8,
-                    left: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: serviceColor.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        link.service.toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 12,
-                    right: 12,
-                    bottom: 10,
+
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.all(12),
                     child: Row(
                       children: [
+                        // Icon with glow
                         Container(
-                          width: 40,
-                          height: 40,
+                          width: 60,
+                          height: 60,
                           decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(15),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.2),
+                              width: 2,
                             ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                spreadRadius: 1,
+                              ),
+                            ],
                           ),
                           child: ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(13),
                             child: CachedNetworkImage(
                               imageUrl: iconUrl,
                               httpHeaders: _getCoomerHeaders(iconUrl),
                               fit: BoxFit.cover,
-                              errorWidget: (context, url, error) => Center(
-                                child: Text(
-                                  link.name.isNotEmpty
-                                      ? link.name[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
+                              errorWidget: (context, url, error) => Container(
+                                color: serviceColor,
+                                child: Center(
+                                  child: Text(
+                                    link.name.isNotEmpty
+                                        ? link.name[0].toUpperCase()
+                                        : '?',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 24,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
                             children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: serviceColor,
+                                  borderRadius: BorderRadius.circular(6),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: serviceColor.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Text(
+                                  link.service.toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: 1.2,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
                               Text(
                                 link.name.isNotEmpty ? link.name : link.id,
                                 style: const TextStyle(
                                   color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: -0.5,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
                               Text(
                                 subtitle,
-                                style: const TextStyle(
-                                  color: Colors.white70,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.7),
                                   fontSize: 12,
+                                  fontWeight: FontWeight.w500,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -1154,11 +1611,12 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                             ],
                           ),
                         ),
-                        const Icon(
-                          Icons.chevron_right,
-                          color: Colors.white70,
-                          size: 20,
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          size: 16,
                         ),
+                        const SizedBox(width: 4),
                       ],
                     ),
                   ),
@@ -1203,11 +1661,8 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     }
   }
 
-  String _buildPostsHeaderText(
-    int visibleCount,
-    int totalCount,
-    bool hasMore,
-  ) {
+  // ignore: unused_element
+  String _buildPostsHeaderText(int visibleCount, int totalCount, bool hasMore) {
     final status = hasMore ? ' â€¢ Loading more...' : ' â€¢ All loaded';
     if (visibleCount == totalCount) {
       return '$visibleCount posts$status';
@@ -1216,17 +1671,29 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     return '$visibleCount posts â€¢ $hiddenCount hidden$status';
   }
 
+  String _buildPostsSummaryText(
+    int visibleCount,
+    int totalCount,
+    bool hasMore,
+  ) {
+    final status = hasMore ? ' - Loading more...' : ' - All loaded';
+    if (visibleCount == totalCount) {
+      return '$visibleCount posts$status';
+    }
+    final hiddenCount = totalCount - visibleCount;
+    return '$visibleCount posts - $hiddenCount hidden$status';
+  }
+
   // SIMPLIFIED Media Grid Item - No shadow, consistent ratio
   Widget _buildMediaGridItem(Map<String, dynamic> mediaItem) {
+    final isVideo = mediaItem['type'] == 'video';
     return GestureDetector(
       onTap: () {
-        // Find the index of this media item in the cached list
         final index = _cachedMediaItems.indexWhere(
           (item) => item['url'] == mediaItem['url'],
         );
 
         if (index != -1) {
-          final isVideo = mediaItem['type'] == 'video';
           if (isVideo) {
             Navigator.push(
               context,
@@ -1234,7 +1701,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                 builder: (context) => VideoPlayerScreen(
                   videoUrl: mediaItem['url'],
                   videoName: mediaItem['name'] ?? 'Video',
-                  apiSource: widget.apiSource.name,
+                  apiSource: _activeApiSource.name,
                 ),
               ),
             );
@@ -1245,7 +1712,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                 builder: (context) => FullscreenMediaViewer(
                   mediaItems: _cachedMediaItems,
                   initialIndex: index,
-                  apiSource: widget.apiSource,
+                  apiSource: _activeApiSource,
                 ),
               ),
             );
@@ -1254,49 +1721,130 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       },
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.22),
+              blurRadius: 16,
+              spreadRadius: -10,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Stack(
           children: [
-            // Media content
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(16),
               child: _buildMediaContent(mediaItem),
             ),
-
-            // Type indicator overlay
-            if (mediaItem['type'] == 'video')
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.7),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow,
-                    color: Colors.white,
-                    size: 16,
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.transparent,
+                      Colors.black.withValues(alpha: 0.42),
+                    ],
+                    stops: const [0, 0.55, 1],
                   ),
                 ),
               ),
-
-            // Hover/tap hint
-            Positioned.fill(
+            ),
+            Positioned(
+              top: 10,
+              left: 10,
               child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.transparent,
-                ),
-                child: const Center(
-                  child: Icon(
-                    Icons.fullscreen,
-                    color: Colors.white54,
-                    size: 24,
+                  color: Colors.black.withValues(alpha: 0.62),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
                   ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isVideo ? Icons.videocam_rounded : Icons.photo_rounded,
+                      color: isVideo
+                          ? Colors.redAccent
+                          : AppTheme.primaryLightColor,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isVideo ? 'VIDEO' : 'IMAGE',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              right: 10,
+              bottom: 10,
+              child: Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.54),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
+                ),
+                child: Icon(
+                  isVideo ? Icons.play_arrow_rounded : Icons.fullscreen_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () {
+                    final index = _cachedMediaItems.indexWhere(
+                      (item) => item['url'] == mediaItem['url'],
+                    );
+                    if (index == -1) return;
+                    if (isVideo) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VideoPlayerScreen(
+                            videoUrl: mediaItem['url'],
+                            videoName: mediaItem['name'] ?? 'Video',
+                            apiSource: _activeApiSource.name,
+                          ),
+                        ),
+                      );
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FullscreenMediaViewer(
+                            mediaItems: _cachedMediaItems,
+                            initialIndex: index,
+                            apiSource: _activeApiSource,
+                          ),
+                        ),
+                      );
+                    }
+                  },
                 ),
               ),
             ),
@@ -1337,10 +1885,10 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       final thumbnailUrl = mediaItem['thumbnail'] as String?;
       final displayUrl =
           settings.loadThumbnails &&
-                  thumbnailUrl != null &&
-                  thumbnailUrl.isNotEmpty
-              ? thumbnailUrl
-              : rawUrl;
+              thumbnailUrl != null &&
+              thumbnailUrl.isNotEmpty
+          ? thumbnailUrl
+          : rawUrl;
       return FutureBuilder<Size>(
         future: _getImageSize(displayUrl),
         builder: (context, snapshot) {
@@ -1436,6 +1984,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
         widget.creator.service,
         widget.creator.id,
         refresh: false,
+        apiSource: _activeApiSource,
       );
       return true;
     }
@@ -1445,89 +1994,169 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
   Widget _buildPostCard(Post post) {
     final hasMedia = post.attachments.isNotEmpty || post.file.isNotEmpty;
     final mediaCount = post.attachments.length + post.file.length;
+    final serviceColor = _getServiceColor(post.service);
+    final preview = _cleanHtmlContent(post.content);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      color: AppTheme.getSurfaceColor(context),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: Theme.of(context).dividerColor),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.darkCardColor.withValues(alpha: 0.98),
+            AppTheme.darkSurfaceColor.withValues(alpha: 0.94),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.82),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.22),
+            blurRadius: 18,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: () => _navigateToPostDetail(post),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Title
-              Text(
-                post.title.isNotEmpty ? post.title : 'Untitled Post',
-                style: AppTheme.titleStyle.copyWith(
-                  color: AppTheme.getOnBackgroundColor(context),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-
-              const SizedBox(height: 8),
-
-              // Date and media info
-              Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    size: 16,
-                    color: AppTheme.getOnSurfaceColor(context),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatDate(post.published),
-                    style: TextStyle(
-                      color: AppTheme.getOnSurfaceColor(context),
-                      fontSize: 12,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _navigateToPostDetail(post),
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: serviceColor.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: serviceColor.withValues(alpha: 0.34),
+                        ),
+                      ),
+                      child: Text(
+                        post.service.toUpperCase(),
+                        style: TextStyle(
+                          color: serviceColor,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.7,
+                        ),
+                      ),
                     ),
-                  ),
-                  if (hasMedia) ...[
-                    const SizedBox(width: 12),
-                    Icon(
-                      Icons.photo,
-                      size: 16,
-                      color: AppTheme.getOnSurfaceColor(context),
-                    ),
-                    const SizedBox(width: 4),
+                    const Spacer(),
                     Text(
-                      '$mediaCount media',
-                      style: TextStyle(
-                        color: AppTheme.getOnSurfaceColor(context),
-                        fontSize: 12,
+                      _formatDate(post.published),
+                      style: const TextStyle(
+                        color: AppTheme.darkSecondaryTextColor,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
-                ],
-              ),
-
-              // Content preview (NO LINKIFY - PostDetail job)
-              if (post.content.isNotEmpty) ...[
-                const SizedBox(height: 8),
+                ),
+                const SizedBox(height: 12),
                 Text(
-                  _cleanHtmlContent(post.content),
-                  style: AppTheme.bodyStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context),
-                    fontSize: 14,
-                    height: 1.4,
+                  post.title.isNotEmpty ? post.title : 'Untitled Post',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.25,
+                    height: 1.3,
                   ),
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
+                if (preview.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text(
+                    preview,
+                    style: TextStyle(
+                      color: AppTheme.darkSecondaryTextColor.withValues(
+                        alpha: 0.95,
+                      ),
+                      fontSize: 13.5,
+                      height: 1.45,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    _buildPostMetaChip(
+                      icon: Icons.photo_library_rounded,
+                      label: hasMedia ? '$mediaCount media' : 'No media',
+                    ),
+                    const SizedBox(width: 8),
+                    _buildPostMetaChip(
+                      icon: Icons.subject_rounded,
+                      label: preview.isEmpty ? 'No text' : 'Has text',
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.14),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.32),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: AppTheme.primaryColor,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
               ],
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPostMetaChip({required IconData icon, required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppTheme.darkElevatedSurfaceColor.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.72),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: AppTheme.darkSecondaryTextColor),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.darkSecondaryTextColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1602,7 +2231,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
   }
 
   String _buildCreatorUrl() {
-    final domain = widget.apiSource == ApiSource.coomer
+    final domain = _activeApiSource == ApiSource.coomer
         ? 'https://n2.coomer.st'
         : 'https://kemono.cr';
 
@@ -1614,7 +2243,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       context,
       MaterialPageRoute(
         builder: (context) =>
-            PostDetailScreen(post: post, apiSource: widget.apiSource),
+            PostDetailScreen(post: post, apiSource: _activeApiSource),
       ),
     );
   }
@@ -1683,15 +2312,16 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
 
 // Helper class for persistent header
 class _TabBarDelegate extends SliverPersistentHeaderDelegate {
-  final TabBar _tabBar;
+  final Widget _child;
+  final double _height;
 
-  _TabBarDelegate(this._tabBar);
-
-  @override
-  double get minExtent => _tabBar.preferredSize.height;
+  _TabBarDelegate(this._child, {double height = 70}) : _height = height;
 
   @override
-  double get maxExtent => _tabBar.preferredSize.height;
+  double get minExtent => _height;
+
+  @override
+  double get maxExtent => _height;
 
   @override
   Widget build(
@@ -1699,7 +2329,7 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(color: AppTheme.getSurfaceColor(context), child: _tabBar);
+    return Container(color: AppTheme.getSurfaceColor(context), child: _child);
   }
 
   @override

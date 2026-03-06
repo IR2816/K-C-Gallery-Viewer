@@ -10,11 +10,11 @@ class AppTheme {
   // ═══════════════════════════════════════════════
   // BRAND COLORS
   // ═══════════════════════════════════════════════
-  static const Color primaryColor = Color(0xFF6C63FF);       // Indigo
-  static const Color primaryDarkColor = Color(0xFF4C46D6);   // Deep indigo
-  static const Color primaryLightColor = Color(0xFF9D97FF);  // Light indigo
-  static const Color accentColor = Color(0xFFFF2D55);        // Rose / like
-  static const Color secondaryAccent = Color(0xFF00C6AE);    // Teal / success
+  static const Color primaryColor = Color(0xFF7C4DFF);       // More vibrant Indigo
+  static const Color primaryDarkColor = Color(0xFF6200EA);   // Deeper vibrant purple
+  static const Color primaryLightColor = Color(0xFFB388FF);  // Lighter vibrant lavender
+  static const Color accentColor = Color(0xFFFF2D70);        // More vibrant Rose
+  static const Color secondaryAccent = Color(0xFF00E5FF);    // Brighter Teal
 
   // ═══════════════════════════════════════════════
   // DARK THEME SURFACES
@@ -102,44 +102,59 @@ class AppTheme {
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryColor, primaryDarkColor],
+    colors: [primaryColor, Color(0xFF9C27B0)], // Indigo to Purple
   );
 
   static const LinearGradient accentGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [Color(0xFFFF2D55), Color(0xFFFF6B8A)],
+    colors: [accentColor, Color(0xFFFF5252)],
   );
 
   static const LinearGradient storyRingGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryColor, accentColor, Color(0xFFFFB300)],
+    colors: [primaryColor, accentColor, Color(0xFFFFD740)],
   );
 
   static const LinearGradient navBarGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [primaryColor, Color(0xFF9B5DE5)],
+    colors: [primaryColor, Color(0xFFD500F9)],
   );
 
   static const LinearGradient darkBackgroundGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [darkBackgroundColor, darkSurfaceColor],
+    colors: [darkBackgroundColor, Color(0xFF12121A)],
   );
 
   static const LinearGradient lightBackgroundGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [lightBackgroundColor, lightSurfaceColor],
+    colors: [lightBackgroundColor, Color(0xFFFDFDFF)],
   );
 
   static const LinearGradient cardOverlayGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [Colors.transparent, Color(0xCC000000)],
+    colors: [Colors.transparent, Color(0xAA000000), Color(0xEE000000)],
   );
+
+  // GLASSMORPHISM
+  static BoxDecoration glassDecoration(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxDecoration(
+      color: isDark 
+          ? Colors.black.withValues(alpha: 0.3) 
+          : Colors.white.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(mdRadius),
+      border: Border.all(
+        color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.1),
+        width: 0.5,
+      ),
+    );
+  }
 
   // ═══════════════════════════════════════════════
   // DARK TEXT STYLES

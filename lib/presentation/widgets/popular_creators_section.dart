@@ -470,7 +470,7 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                       imageUrl: bannerUrl,
                       httpHeaders: _getCoomerHeaders(bannerUrl),
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
+                      placeholder: (_, url) => Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
@@ -480,7 +480,7 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                           ),
                         ),
                       ),
-                      errorWidget: (_, __, ___) => Container(
+                      errorWidget: (_, url, error) => Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
@@ -568,7 +568,7 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                                 imageUrl: iconUrl,
                                 httpHeaders: _getCoomerHeaders(iconUrl),
                                 fit: BoxFit.cover,
-                                errorWidget: (_, __, ___) => Center(
+                                errorWidget: (_, url, error) => Center(
                                   child: Text(
                                     creator.name.isNotEmpty ? creator.name[0].toUpperCase() : '?',
                                     style: const TextStyle(

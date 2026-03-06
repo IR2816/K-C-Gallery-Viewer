@@ -100,32 +100,45 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? const Color(0xFF1E1F22) : AppTheme.getBackgroundColor(context);
-    final appBarColor =
-        isDark ? const Color(0xFF2B2D31) : AppTheme.getSurfaceColor(context);
+    final bgColor = isDark ? const Color(0xFF1E1F22) : AppTheme.getBackgroundColor(context);
+    final appBarColor = isDark ? const Color(0xFF2B2D31) : AppTheme.getSurfaceColor(context);
 
     return Scaffold(
       backgroundColor: bgColor,
       appBar: AppBar(
+        backgroundColor: appBarColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          onPressed: () => Navigator.pop(context),
+        ),
+        titleSpacing: 0,
         title: Row(
           children: [
-            const Icon(Icons.tag, size: 18),
-            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.indigoAccent.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.tag_rounded, size: 18, color: Colors.indigoAccent),
+            ),
+            const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '# ${widget.channelName}',
-                style: AppTheme.getTitleStyle(
-                  context,
-                ).copyWith(color: AppTheme.getOnBackgroundColor(context)),
+                widget.channelName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: -0.5,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
         ),
-        backgroundColor: appBarColor,
-        foregroundColor: AppTheme.getOnSurfaceColor(context),
-        elevation: 0,
       ),
       body: Consumer<DiscordProvider>(
         builder: (context, provider, child) {
@@ -196,14 +209,9 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
     final isEdited = post.edited.isAfter(post.published);
     final headerMeta = isEdited ? '$timeText - edited' : timeText;
     final hasText = post.title.isNotEmpty || post.content.isNotEmpty;
-    final messageSurface = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF313338)
-        : AppTheme.getSurfaceColor(context);
     final mediaItems = _getMediaItems(post);
-    final visualMedia =
-        mediaItems.where((item) => item['type'] != 'file').toList();
-    final fileItems =
-        mediaItems.where((item) => item['type'] == 'file').toList();
+    final visualMedia = mediaItems.where((item) => item['type'] != 'file').toList();
+    final fileItems = mediaItems.where((item) => item['type'] == 'file').toList();
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
@@ -233,26 +241,30 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
                     const SizedBox(width: 8),
                     Text(
                       headerMeta,
-                      style: AppTheme.getCaptionStyle(
-                        context,
-                      ).copyWith(color: AppTheme.secondaryTextColor),
+                      style: AppTheme.getCaptionStyle(context).copyWith(color: AppTheme.secondaryTextColor),
                     ),
                   ],
                 ),
                 if (hasText) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: messageSurface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Theme.of(context).dividerColor.withValues(alpha: 0.2),
+                      color: AppTheme.darkCardColor,
+                      borderRadius: const BorderRadius.only(
+                        topRight: Radius.circular(16),
+                        bottomLeft: Radius.circular(16),
+                        bottomRight: Radius.circular(16),
                       ),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

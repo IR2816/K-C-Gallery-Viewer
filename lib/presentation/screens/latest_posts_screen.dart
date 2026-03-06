@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/api_source.dart';
 import '../../domain/entities/creator.dart';
@@ -9,7 +8,6 @@ import '../providers/settings_provider.dart';
 import '../providers/tag_filter_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_state_widgets.dart';
-import '../utils/media_preview_resolver.dart';
 import 'post_detail_screen.dart';
 import 'creator_detail_screen.dart';
 import 'download_manager_screen.dart';
@@ -27,6 +25,7 @@ class LatestPostsScreen extends StatefulWidget {
 class _LatestPostsScreenState extends State<LatestPostsScreen>
     with AutomaticKeepAliveClientMixin {
   final ScrollController _scrollController = ScrollController();
+  SettingsProvider? _settingsProvider;
   bool _isLoading = false;
   bool _isLoadingMore = false;
   List<Post> _posts = [];
@@ -34,9 +33,6 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
   bool _hasMore = true;
   String _selectedService = 'kemono';
   List<String> _blockedTags = [];
-  final Map<String, List<Map<String, dynamic>>> _postMediaCache = {};
-  final Map<String, String> _postMediaCacheKeys = {};
-  SettingsProvider? _settingsProvider;
   TagFilterProvider? _tagFilterProvider;
   int _currentPage = 1;
   static const int _pageSize = 24;
@@ -55,6 +51,10 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       _posts.removeRange(0, excessCount);
       _syncPostMediaCache();
     }
+  }
+
+  void _syncPostMediaCache() {
+    // Keep method for compatibility with memory cleanup flow.
   }
 
   @override
@@ -79,8 +79,6 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
 
     // Clear posts list to free memory
     _posts.clear();
-    _postMediaCache.clear();
-    _postMediaCacheKeys.clear();
     super.dispose();
   }
 
@@ -215,6 +213,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     );
   }
 
+  // ignore: unused_element
   bool _hasBlockedTags(Post post) {
     final tagFilterProvider = context.read<TagFilterProvider>();
     final blockedTags = tagFilterProvider.blacklist;
@@ -246,89 +245,15 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     return false;
   }
 
-  ApiSource get _currentApiSource => ApiSource.values.firstWhere(
-        (a) => a.name == _selectedService,
-      );
-
-  void _syncPostMediaCache() {
-    final ids = _posts.map((p) => p.id).toSet();
-    _postMediaCache.removeWhere((key, _) => !ids.contains(key));
-    _postMediaCacheKeys.removeWhere((key, _) => !ids.contains(key));
-  }
-
-  List<Map<String, dynamic>> _getPostMediaItems(Post post) {
-    final key = '${post.id}|${post.file.length}|${post.attachments.length}';
-    if (_postMediaCacheKeys[post.id] == key) {
-      return _postMediaCache[post.id] ?? const [];
-    }
-
-    final mediaItems = <Map<String, dynamic>>[];
-    final apiSource =
-        post.service == 'onlyfans' ||
-                post.service == 'fansly' ||
-                post.service == 'candfans'
-            ? 'coomer'
-            : 'kemono';
-
-    for (final file in post.file) {
-      final fullUrl = _buildFullUrl(file.path, post.service);
-      final thumbnailUrl = _getThumbnailUrl(fullUrl, apiSource);
-      mediaItems.add({
-        'type': 'image',
-        'url': fullUrl,
-        'name': file.name,
-        'thumbnail_url': thumbnailUrl,
-      });
-    }
-
-    for (final attachment in post.attachments) {
-      final fullUrl = _buildFullUrl(attachment.path, post.service);
-      final thumbnailUrl = _getThumbnailUrl(fullUrl, apiSource);
-      final isVideo =
-          attachment.name.toLowerCase().endsWith('.mp4') == true ||
-          attachment.name.toLowerCase().endsWith('.webm') == true ||
-          attachment.name.toLowerCase().endsWith('.mov') == true;
-
-      mediaItems.add({
-        'type': isVideo ? 'video' : 'image',
-        'url': fullUrl,
-        'name': attachment.name,
-        'thumbnail_url': thumbnailUrl,
-      });
-    }
-
-    // Deduplicate by URL to avoid double counts (some posts repeat same file)
-    final seenUrls = <String>{};
-    final deduped = <Map<String, dynamic>>[];
-    for (final item in mediaItems) {
-      final url = item['url'] as String? ?? '';
-      if (url.isEmpty) continue;
-      if (seenUrls.add(url)) {
-        deduped.add(item);
-      }
-    }
-
-    mediaItems.sort(
-      (a, b) => (a['name'] as String).compareTo(b['name'] as String),
-    );
-
-    deduped.sort(
-      (a, b) => (a['name'] as String).compareTo(b['name'] as String),
-    );
-
-    _postMediaCache[post.id] = deduped;
-    _postMediaCacheKeys[post.id] = key;
-    return deduped;
-  }
+  ApiSource get _currentApiSource =>
+      ApiSource.values.firstWhere((a) => a.name == _selectedService);
 
   void _navigateToPostDetail(Post post) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => PostDetailScreen(
-          post: post,
-          apiSource: _currentApiSource,
-        ),
+        builder: (context) =>
+            PostDetailScreen(post: post, apiSource: _currentApiSource),
       ),
     );
   }
@@ -337,10 +262,8 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CreatorDetailScreen(
-          creator: creator,
-          apiSource: _currentApiSource,
-        ),
+        builder: (context) =>
+            CreatorDetailScreen(creator: creator, apiSource: _currentApiSource),
       ),
     );
   }
@@ -354,6 +277,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     );
   }
 
+  // ignore: unused_element
   String _cleanHtmlContent(String content) {
     try {
       final cleanText = content
@@ -366,6 +290,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     }
   }
 
+  // ignore: unused_element
   String _getServiceDisplayName(String service) {
     switch (service.toLowerCase()) {
       case 'patreon':
@@ -404,6 +329,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     }
   }
 
+  // ignore: unused_element
   String _formatDate(DateTime date) {
     final now = DateTime.now();
     final difference = now.difference(date);
@@ -439,10 +365,12 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     return months[month - 1];
   }
 
+  // ignore: unused_element
   String _normalizeTitle(String text) {
     return text.replaceAll(RegExp(r'\s+'), ' ').trim();
   }
 
+  // ignore: unused_element
   int _getTitleMaxLines({
     required int textLength,
     required int columnCount,
@@ -462,6 +390,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     return lines.clamp(1, 5);
   }
 
+  // ignore: unused_element
   double _getTitleFontSize({
     required int textLength,
     required int columnCount,
@@ -486,104 +415,206 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     return Scaffold(
       backgroundColor: AppTheme.getBackgroundColor(context),
       appBar: _buildTopAppBar(),
-      body: RefreshIndicator(
-        onRefresh: _loadInitialPosts,
-        child: Column(
-          children: [
-            _buildFilterInfoBar(),
-            Expanded(child: _buildPostList()),
-            if (_posts.isNotEmpty) _buildPaginationBar(),
-          ],
-        ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    AppTheme.getBackgroundColor(context),
+                    AppTheme.getBackgroundColor(
+                      context,
+                    ).withValues(alpha: 0.98),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: -130,
+            left: -70,
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppTheme.primaryColor.withValues(alpha: 0.17),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            top: 20,
+            right: -90,
+            child: Container(
+              width: 240,
+              height: 240,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    AppTheme.secondaryAccent.withValues(alpha: 0.12),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          RefreshIndicator(
+            onRefresh: _loadInitialPosts,
+            child: Column(
+              children: [
+                _buildFilterInfoBar(),
+                Expanded(child: _buildPostList()),
+                if (_posts.isNotEmpty) _buildPaginationBar(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
   PreferredSizeWidget _buildTopAppBar() {
     return AppBar(
-      backgroundColor: AppTheme.getBackgroundColor(context),
+      toolbarHeight: 84,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       scrolledUnderElevation: 0,
-      title: ShaderMask(
-        shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
-        child: const Text(
-          'Feed',
-          style: TextStyle(
-            fontWeight: FontWeight.w800,
-            fontSize: 26,
-            color: Colors.white,
-            letterSpacing: -0.5,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppTheme.primaryColor.withValues(alpha: 0.16),
+              Colors.transparent,
+            ],
           ),
         ),
       ),
-      actions: [
-        // Download shortcut
-        GestureDetector(
-          onTap: _showDownloadManager,
-          child: Container(
-            width: 36,
-            height: 36,
-            margin: const EdgeInsets.only(right: 6),
-            decoration: BoxDecoration(
-              color: AppTheme.secondaryAccent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.download_rounded, color: AppTheme.secondaryAccent, size: 20),
-          ),
-        ),
-        // Refresh
-        GestureDetector(
-          onTap: _loadInitialPosts,
-          child: Container(
-            width: 36,
-            height: 36,
-            margin: const EdgeInsets.only(right: 8),
-            decoration: BoxDecoration(
-              color: _isLoading
-                  ? AppTheme.primaryColor.withValues(alpha: 0.12)
-                  : AppTheme.darkCardColor,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: AppTheme.darkBorderColor),
-            ),
-            child: _isLoading
-                ? const Padding(
-                    padding: EdgeInsets.all(9),
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppTheme.primaryColor,
-                    ),
-                  )
-                : const Icon(Icons.refresh_rounded, size: 18, color: AppTheme.darkSecondaryTextColor),
-          ),
-        ),
-        // Filter
-        GestureDetector(
-          onTap: _showFilterBottomSheet,
-          child: Container(
-            width: 36,
-            height: 36,
-            margin: const EdgeInsets.only(right: 16),
-            decoration: BoxDecoration(
-              color: _blockedTags.isNotEmpty
-                  ? AppTheme.primaryColor.withValues(alpha: 0.15)
-                  : AppTheme.darkCardColor,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: _blockedTags.isNotEmpty
-                    ? AppTheme.primaryColor.withValues(alpha: 0.4)
-                    : AppTheme.darkBorderColor,
+      titleSpacing: 16,
+      title: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ShaderMask(
+            shaderCallback: (bounds) =>
+                AppTheme.primaryGradient.createShader(bounds),
+            child: const Text(
+              'Feed',
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                fontSize: 34,
+                color: Colors.white,
+                letterSpacing: -1.2,
+                height: 1,
               ),
             ),
-            child: Icon(
-              Icons.tune_rounded,
-              size: 18,
-              color: _blockedTags.isNotEmpty
-                  ? AppTheme.primaryColor
-                  : AppTheme.darkSecondaryTextColor,
+          ),
+          Text(
+            'Latest drops from creators',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.8),
             ),
           ),
+        ],
+      ),
+      actions: [
+        _buildTopActionButton(
+          icon: Icons.download_rounded,
+          onTap: _showDownloadManager,
+          accentColor: AppTheme.secondaryAccent,
+        ),
+        _buildTopActionButton(
+          icon: Icons.refresh_rounded,
+          onTap: _loadInitialPosts,
+          accentColor: _isLoading ? AppTheme.primaryColor : null,
+          child: _isLoading
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppTheme.primaryColor,
+                  ),
+                )
+              : null,
+        ),
+        _buildTopActionButton(
+          icon: Icons.tune_rounded,
+          onTap: _showFilterBottomSheet,
+          accentColor: _blockedTags.isNotEmpty ? AppTheme.primaryColor : null,
+          margin: const EdgeInsets.only(right: 16),
         ),
       ],
+    );
+  }
+
+  Widget _buildTopActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color? accentColor,
+    Widget? child,
+    EdgeInsetsGeometry margin = const EdgeInsets.only(right: 8),
+  }) {
+    final activeColor = accentColor ?? AppTheme.darkSecondaryTextColor;
+    final isActive = accentColor != null;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        margin: margin,
+        decoration: BoxDecoration(
+          gradient: isActive
+              ? LinearGradient(
+                  colors: [
+                    activeColor.withValues(alpha: 0.24),
+                    activeColor.withValues(alpha: 0.14),
+                  ],
+                )
+              : null,
+          color: isActive
+              ? null
+              : AppTheme.darkCardColor.withValues(alpha: 0.84),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isActive
+                ? activeColor.withValues(alpha: 0.45)
+                : AppTheme.darkBorderColor,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: (isActive ? activeColor : Colors.black).withValues(
+                alpha: isActive ? 0.2 : 0.25,
+              ),
+              blurRadius: 12,
+              spreadRadius: -6,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Center(
+          child:
+              child ??
+              Icon(
+                icon,
+                size: 20,
+                color: isActive ? activeColor : AppTheme.darkSecondaryTextColor,
+              ),
+        ),
+      ),
     );
   }
 
@@ -593,72 +624,132 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       {'id': 'coomer', 'label': 'Coomer'},
     ];
     return Container(
-      height: 48,
-      margin: const EdgeInsets.only(bottom: 4),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: const EdgeInsets.all(6),
+      decoration: BoxDecoration(
+        color: AppTheme.darkSurfaceColor.withValues(alpha: 0.82),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.85),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 18,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
         children: [
-          ...services.map((s) {
-            final sid = s['id']!;
-            final isSelected = sid == _selectedService;
-            final serviceColor = _getServiceColor(sid);
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () async {
-                  setState(() => _selectedService = sid);
-                  await _loadInitialPosts();
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                  decoration: BoxDecoration(
-                    gradient: isSelected
-                        ? LinearGradient(
-                            colors: [serviceColor, serviceColor.withValues(alpha: 0.7)],
-                          )
-                        : null,
-                    color: isSelected ? null : AppTheme.darkCardColor,
-                    borderRadius: BorderRadius.circular(AppTheme.pillRadius),
-                    border: Border.all(
-                      color: isSelected
-                          ? serviceColor
-                          : AppTheme.darkBorderColor,
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Text(
-                    s['label']!,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
-                      fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          }),
-          if (_blockedTags.isNotEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              margin: const EdgeInsets.only(right: 8),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: AppTheme.warningColor.withValues(alpha: 0.12),
+                color: AppTheme.darkCardColor.withValues(alpha: 0.75),
                 borderRadius: BorderRadius.circular(AppTheme.pillRadius),
-                border: Border.all(color: AppTheme.warningColor.withValues(alpha: 0.3)),
-              ),
-              child: Text(
-                '${_blockedTags.length} blocked',
-                style: const TextStyle(
-                  color: AppTheme.warningColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                border: Border.all(
+                  color: AppTheme.darkBorderColor.withValues(alpha: 0.8),
                 ),
+              ),
+              child: Row(
+                children: services.map((s) {
+                  final sid = s['id']!;
+                  return Expanded(
+                    child: _buildServiceToggle(id: sid, label: s['label']!),
+                  );
+                }).toList(),
               ),
             ),
+          ),
+          if (_blockedTags.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              decoration: BoxDecoration(
+                color: AppTheme.warningColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: AppTheme.warningColor.withValues(alpha: 0.34),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.block_rounded,
+                    size: 14,
+                    color: AppTheme.warningColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${_blockedTags.length}',
+                    style: const TextStyle(
+                      color: AppTheme.warningColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildServiceToggle({required String id, required String label}) {
+    final isSelected = id == _selectedService;
+    final serviceColor = _getServiceColor(id);
+
+    return GestureDetector(
+      onTap: () async {
+        if (isSelected) return;
+        setState(() => _selectedService = id);
+        await _loadInitialPosts();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? LinearGradient(
+                  colors: [
+                    serviceColor.withValues(alpha: 0.95),
+                    serviceColor.withValues(alpha: 0.72),
+                  ],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+          border: Border.all(
+            color: isSelected
+                ? serviceColor.withValues(alpha: 0.95)
+                : Colors.transparent,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: serviceColor.withValues(alpha: 0.35),
+                    blurRadius: 12,
+                    spreadRadius: -8,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -731,22 +822,6 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
 
     final settings = context.watch<SettingsProvider>();
     final int columnCount = settings.latestPostsColumns.clamp(1, 3);
-    final bool isCompact = settings.latestPostCardStyle == 'compact';
-    final double aspectRatio;
-    if (columnCount == 1) {
-      aspectRatio = isCompact ? 2.4 : 1.6;
-    } else if (columnCount == 2) {
-      aspectRatio = isCompact ? 1.1 : 0.75;
-    } else {
-      aspectRatio = isCompact ? 0.85 : 0.65;
-    }
-
-    final mediaQuery = MediaQuery.of(context);
-    final availableWidth = mediaQuery.size.width - 32; // Grid padding
-    final imageWidth =
-        (availableWidth - ((columnCount - 1) * 12)) / columnCount;
-    final memCacheWidth = (imageWidth * mediaQuery.devicePixelRatio).round();
-    final cacheExtent = mediaQuery.size.height * 2;
     final pagePosts = _getPagePosts();
 
     if (pagePosts.isEmpty && _isLoadingMore) {
@@ -760,7 +835,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
 
     return MasonryGridView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columnCount,
       ),
@@ -773,7 +848,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
         return RepaintBoundary(
           child: PostCard(
             post: post,
-            apiSource: _settingsProvider!.defaultApiSource,
+            apiSource: settings.defaultApiSource,
             onTap: () => _navigateToPostDetail(post),
             onCreatorTap: () {
               final creator = Creator(
@@ -791,8 +866,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     );
   }
 
-
-
+  // ignore: unused_element
   Widget _buildServiceBadge(String service, Color color) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -801,8 +875,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color:
-                AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.2),
+            color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.2),
             blurRadius: 8,
             offset: const Offset(0, 4),
           ),
@@ -820,11 +893,8 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     );
   }
 
-  Widget _buildMediaCountBadge(
-    int mediaCount,
-    bool hasVideo,
-    bool isBlocked,
-  ) {
+  // ignore: unused_element
+  Widget _buildMediaCountBadge(int mediaCount, bool hasVideo, bool isBlocked) {
     final badgeColor = isBlocked
         ? Colors.red.withValues(alpha: 0.9)
         : AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.65);
@@ -862,24 +932,31 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     final canGoNext = _hasMore || _currentPage < totalLoadedPages;
 
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 96, top: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(16, 10, 16, 108),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context).withValues(alpha: 0.95),
-        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.darkCardColor.withValues(alpha: 0.94),
+            AppTheme.darkSurfaceColor.withValues(alpha: 0.94),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.1),
+          color: AppTheme.darkBorderColor.withValues(alpha: 0.9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 18,
+            spreadRadius: -10,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildPageButton(
             icon: Icons.chevron_left_rounded,
@@ -887,39 +964,48 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
             enabled: canGoPrev,
             onTap: () => _goToPage(_currentPage - 1),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Page $_currentPage',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  fontSize: 14,
-                  color: Colors.white,
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (_isLoadingMore) ...[
-                    const SizedBox(
-                      width: 10,
-                      height: 10,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryColor),
-                    ),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(
-                    _hasMore ? '$totalLoadedPages+ loaded' : '$totalLoadedPages total',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.darkSecondaryTextColor,
-                    ),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Page $_currentPage',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: Colors.white,
                   ),
-                ],
-              ),
-            ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isLoadingMore) ...[
+                      const SizedBox(
+                        width: 10,
+                        height: 10,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                    ],
+                    Text(
+                      _hasMore
+                          ? '$totalLoadedPages+ loaded'
+                          : '$totalLoadedPages total',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.darkSecondaryTextColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
           _buildPageButton(
             icon: Icons.chevron_right_rounded,
@@ -940,33 +1026,53 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     required VoidCallback onTap,
     bool isNext = false,
   }) {
-    final color = enabled 
-        ? AppTheme.primaryColor 
-        : AppTheme.darkSecondaryTextColor.withValues(alpha: 0.5);
+    final color = enabled
+        ? (isNext ? Colors.white : AppTheme.primaryColor)
+        : AppTheme.darkSecondaryTextColor.withValues(alpha: 0.52);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          constraints: const BoxConstraints(minWidth: 92),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: enabled 
-                ? AppTheme.primaryColor.withValues(alpha: 0.15) 
+            gradient: enabled && isNext
+                ? const LinearGradient(
+                    colors: [AppTheme.primaryColor, AppTheme.primaryDarkColor],
+                  )
+                : null,
+            color: enabled
+                ? (isNext
+                      ? null
+                      : AppTheme.primaryColor.withValues(alpha: 0.15))
                 : Colors.transparent,
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: enabled 
-                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
+              color: enabled
+                  ? (isNext
+                        ? AppTheme.primaryColor.withValues(alpha: 0.65)
+                        : AppTheme.primaryColor.withValues(alpha: 0.36))
                   : Colors.transparent,
             ),
+            boxShadow: enabled && isNext
+                ? [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.33),
+                      blurRadius: 14,
+                      spreadRadius: -9,
+                      offset: const Offset(0, 7),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (!isNext) ...[
-                Icon(icon, color: color, size: 20),
+                Icon(icon, color: color, size: 18),
                 const SizedBox(width: 4),
               ],
               Text(
@@ -974,12 +1080,12 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
                 style: TextStyle(
                   color: color,
                   fontWeight: FontWeight.w700,
-                  fontSize: 13,
+                  fontSize: 12.5,
                 ),
               ),
               if (isNext) ...[
                 const SizedBox(width: 4),
-                Icon(icon, color: color, size: 20),
+                Icon(icon, color: color, size: 18),
               ],
             ],
           ),
@@ -988,8 +1094,11 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildSocialActions() {
-    final iconColor = AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6);
+    final iconColor = AppTheme.getOnSurfaceColor(
+      context,
+    ).withValues(alpha: 0.6);
     return Row(
       children: [
         Icon(Icons.favorite_border, size: 16, color: iconColor),
@@ -999,131 +1108,6 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
         Icon(Icons.bookmark_border, size: 16, color: iconColor),
         const Spacer(),
         Icon(Icons.more_horiz, size: 16, color: iconColor),
-      ],
-    );
-  }
-
-  Widget _buildMediaPreview(
-    Map<String, dynamic> media,
-    int totalCount,
-    bool hasVideo,
-    bool hasBlockedTags, {
-    required SettingsProvider settings,
-    required int memCacheWidth,
-  }) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        // Media thumbnail
-        ClipRRect(
-          borderRadius: BorderRadius.circular(0),
-          child: Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: AppTheme.getSurfaceColor(context),
-            ),
-            child: _buildOptimizedMediaThumbnail(
-              media,
-              hasVideo,
-              settings: settings,
-              memCacheWidth: memCacheWidth,
-            ),
-          ),
-        ),
-
-        // Video overlay
-        if (hasVideo)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.getOnSurfaceColor(context)
-                        .withValues(alpha: 0.24),
-                    Colors.transparent,
-                  ],
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                ),
-              ),
-                child: Center(
-                  child: Icon(
-                    Icons.play_circle_filled,
-                    color: AppTheme.getSurfaceColor(context),
-                    size: 32,
-                  ),
-                ),
-              ),
-            ),
-
-        // Blocked content overlay
-        if (hasBlockedTags)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                 gradient: LinearGradient(
-                   colors: [
-                     Colors.red.withValues(alpha: 0.8),
-                     Colors.red.withValues(alpha: 0.4),
-                   ],
-                   begin: Alignment.center,
-                   end: Alignment.topCenter,
-                 ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.block,
-                        color: AppTheme.getSurfaceColor(context), size: 24),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Blocked',
-                      style: TextStyle(
-                        color: AppTheme.getSurfaceColor(context),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        shadows: [
-                          Shadow(
-                            color: AppTheme.getOnSurfaceColor(context)
-                                .withValues(alpha: 0.5),
-                            offset: const Offset(0, 1),
-                            blurRadius: 2,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-
-        // Media count badge
-        if (totalCount > 1)
-          Positioned(
-            top: 8,
-            right: 8,
-             child: Container(
-               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-               decoration: BoxDecoration(
-                 color: hasBlockedTags
-                     ? Colors.red.withValues(alpha: 0.9)
-                     : AppTheme.getOnSurfaceColor(context)
-                         .withValues(alpha: 0.7),
-                 borderRadius: BorderRadius.circular(10),
-               ),
-               child: Text(
-                 '+${totalCount - 1}',
-                 style: TextStyle(
-                   color: AppTheme.getSurfaceColor(context),
-                   fontSize: 10,
-                   fontWeight: FontWeight.w600,
-                 ),
-               ),
-             ),
-          ),
       ],
     );
   }
@@ -1317,6 +1301,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     );
   }
 
+  // ignore: unused_element
   void _showPostOptions(Post post) {
     showModalBottomSheet(
       context: context,
@@ -1382,177 +1367,20 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     );
   }
 
-  Widget _buildOptimizedMediaThumbnail(
-    Map<String, dynamic> media,
-    bool hasVideo, {
-    required SettingsProvider settings,
-    required int memCacheWidth,
-  }) {
-    final isVideo = media['type'] == 'video';
-
-    if (isVideo) {
-      // Video placeholder
-      return MediaPreviewResolver.buildVideoPlaceholder();
-    } else {
-      // ✅ MANUAL THUMBNAIL BUILDING - Original link + client-side downscale
-      final thumbnailUrl = media['thumbnail_url'] as String? ?? '';
-      final fullUrl = media['url'] as String;
-
-      return _buildOptimizedThumbnail(
-        thumbnailUrl,
-        fullUrl,
-        imageFit: settings.imageFitMode,
-        memCacheWidth: memCacheWidth,
-      );
-    }
+  // ignore: unused_element
+  Widget _buildEmptyGridPlaceholder() {
+    return Container();
   }
 
-  /// Build optimized thumbnail with client-side downscale (SAME AS POST DETAIL)
-  Widget _buildOptimizedThumbnail(
-    String thumbnailUrl,
-    String fullUrl, {
-    required BoxFit imageFit,
-    required int memCacheWidth,
-  }) {
-    // Use thumbnail URL for preview. Fall back to full only when no thumbnail exists.
-    final displayUrl = thumbnailUrl.isNotEmpty ? thumbnailUrl : fullUrl;
-
-    // 🚀 FIX: Add HTTP headers for Coomer CDN anti-hotlink protection
-    final isCoomerDomain =
-        displayUrl.contains('coomer.st') || displayUrl.contains('n2.coomer.st');
-    final httpHeaders = isCoomerDomain
-        ? const {
-            'User-Agent':
-                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Accept': 'image/avif,image/webp,image/*,*/*;q=0.8',
-            'Referer': 'https://coomer.st/',
-            'Origin': 'https://coomer.st',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-          }
-        : null;
-
-    return CachedNetworkImage(
-      imageUrl: displayUrl,
-      httpHeaders: httpHeaders,
-      fit: imageFit,
-      memCacheWidth: memCacheWidth, // Optimize for grid layout
-      maxWidthDiskCache: 1024, // Limit disk cache size
-      placeholder: (context, url) => Container(
-        color: AppTheme.getSurfaceColor(context),
-        child: Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.54),
-            ),
-          ),
-        ),
-      ),
-      errorWidget: (context, url, error) {
-        // Downscale fallback to full image if thumbnail fails
-        if (thumbnailUrl.isNotEmpty && url == thumbnailUrl) {
-          final isCoomerFallback =
-              fullUrl.contains('coomer.st') || fullUrl.contains('n2.coomer.st');
-          final fallbackHeaders = isCoomerFallback
-              ? const {
-                  'User-Agent':
-                      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                  'Accept': 'image/avif,image/webp,image/*,*/*;q=0.8',
-                  'Referer': 'https://coomer.st/',
-                  'Origin': 'https://coomer.st',
-                  'Accept-Language': 'en-US,en;q=0.9',
-                  'Accept-Encoding': 'gzip, deflate, br',
-                  'Connection': 'keep-alive',
-                  'Upgrade-Insecure-Requests': '1',
-                }
-              : null;
-
-          return CachedNetworkImage(
-            imageUrl: fullUrl,
-            httpHeaders: fallbackHeaders,
-            fit: imageFit,
-            memCacheWidth: memCacheWidth, // Downscale full image for feed
-            maxWidthDiskCache: 1024,
-            placeholder: (context, url) => Container(
-              color: AppTheme.getSurfaceColor(context),
-              child: Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.54),
-                  ),
-                ),
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              color: AppTheme.getSurfaceColor(context),
-              child: Center(
-                child: Icon(
-                  Icons.broken_image,
-                  color: AppTheme.getOnSurfaceColor(context)
-                      .withValues(alpha: 0.54),
-                ),
-              ),
-            ),
-          );
-        }
-
-        return Container(
-          color: AppTheme.getSurfaceColor(context),
-          child: Center(
-            child: Icon(
-              Icons.broken_image,
-              color:
-                  AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.54),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  /// Build full URL from path (SAME AS POST DETAIL)
+  /// Build full URL from path
+  // ignore: unused_element
   String _buildFullUrl(String path, String service) {
-    if (path.startsWith('http')) {
-      return path; // Already full URL
-    }
-
-    // Determine domain based on service
-    String domain;
-    if (service == 'onlyfans' || service == 'fansly' || service == 'candfans') {
-      // Use CDN rotation for Coomer reliability
-      domain = 'https://n2.coomer.st'; // Primary CDN
-    } else {
-      domain = 'https://kemono.cr'; // Kemono services
-    }
-
+    if (path.startsWith('http')) return path;
+    String domain =
+        (service == 'onlyfans' || service == 'fansly' || service == 'candfans')
+        ? 'n2.coomer.st'
+        : 'n2.kemono.cr';
     return '$domain/data$path';
-  }
-
-  /// Get thumbnail URL for Kemono/Coomer (SAME AS POST DETAIL)
-  String _getThumbnailUrl(String originalUrl, String apiSource) {
-    try {
-      final uri = Uri.parse(originalUrl);
-      final segments = uri.pathSegments;
-      if (segments.isNotEmpty && segments.first == 'data') {
-        final restPath = segments.skip(1).join('/');
-        final thumbnailPath = 'thumbnail/data/$restPath';
-
-        if (apiSource == 'coomer' || uri.host.contains('coomer')) {
-          return 'https://img.coomer.st/$thumbnailPath';
-        }
-
-        return 'https://img.kemono.cr/$thumbnailPath';
-      }
-
-      // Fallback to original URL
-      return originalUrl;
-    } catch (e) {
-      return originalUrl;
-    }
   }
 
   /// 🚀 NEW: Show domain transition animation

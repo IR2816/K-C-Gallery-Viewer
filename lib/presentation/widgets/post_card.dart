@@ -103,11 +103,11 @@ class PostCard extends StatelessWidget {
                   child: CachedNetworkImage(
                     imageUrl: _getCreatorAvatarUrl(),
                     fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(
+                    placeholder: (_, url) => Container(
                       color: AppTheme.darkElevatedSurfaceColor,
                       child: const Icon(Icons.person, size: 16, color: Colors.white70),
                     ),
-                    errorWidget: (_, __, ___) => Container(
+                    errorWidget: (_, url, error) => Container(
                       color: AppTheme.darkElevatedSurfaceColor,
                       child: const Icon(Icons.person, size: 16, color: Colors.white70),
                     ),
@@ -173,9 +173,11 @@ class PostCard extends StatelessWidget {
   Widget _buildThumbnail(BuildContext context) {
     return Consumer<SettingsProvider>(
       builder: (context, settings, _) {
-        final thumbnailUrl = post.getBestThumbnailUrl(apiSource);
+        final quality = settings.imageQuality;
+        final thumbnailUrl = post.getBestThumbnailUrl(apiSource, quality: quality);
+        
         return AspectRatio(
-          aspectRatio: 4 / 3,
+          aspectRatio: 1.5, // Standard 3:2 aspect ratio for feed
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -186,6 +188,8 @@ class PostCard extends StatelessWidget {
                       fit: BoxFit.cover,
                       isThumbnail: true,
                       apiSource: apiSource.name,
+                      quality: quality,
+                      allowFallback: quality != 'low', // Disable fallback in Low Quality / Data Saver
                       errorWidget: _buildImagePlaceholder(),
                     )
                   : _buildImagePlaceholder(),

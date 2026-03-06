@@ -215,115 +215,109 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
     final bannerUrl = _buildDiscordBannerUrl(widget.server.id);
     final iconUrl = _buildDiscordIconUrl(widget.server.id);
     return SliverAppBar(
-      expandedHeight: 200,
+      expandedHeight: 220,
       floating: false,
       pinned: true,
       elevation: 0,
-      backgroundColor: AppTheme.getSurfaceColor(context),
-      foregroundColor: AppTheme.getOnSurfaceColor(context),
+      scrolledUnderElevation: 0,
+      backgroundColor: AppTheme.getBackgroundColor(context),
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           children: [
+            // Banner with high-end treatment
             Positioned.fill(
               child: CachedNetworkImage(
                 imageUrl: bannerUrl,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
-                ),
+                placeholder: (context, url) => Container(color: Colors.indigo.withValues(alpha: 0.1)),
                 errorWidget: (context, url, error) => Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        AppTheme.primaryColor.withValues(alpha: 0.7),
-                        AppTheme.primaryColor.withValues(alpha: 0.4),
-                        AppTheme.getSurfaceColor(context),
-                      ],
+                      colors: [Colors.indigo.withValues(alpha: 0.8), Colors.black],
                     ),
                   ),
                 ),
               ),
             ),
+            // Multi-layer gradient for depth
             Positioned.fill(
               child: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.35),
-                      Colors.black.withValues(alpha: 0.7),
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.9),
                     ],
                   ),
                 ),
               ),
             ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(AppTheme.lgPadding),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // Server Icon
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: CachedNetworkImage(
-                          imageUrl: iconUrl,
-                          fit: BoxFit.cover,
-                          errorWidget: (context, url, error) => Icon(
-                            Icons.discord,
-                            color: Colors.white,
-                            size: 32,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Server Name
-                    Text(
-                      widget.server.name,
-                      style: AppTheme.getTitleStyle(context).copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 24,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-
-                    // Server Info
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          color: Colors.white.withValues(alpha: 0.8),
-                          size: 16,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Discord Server',
-                          style: AppTheme.getBodyStyle(
-                            context,
-                          ).copyWith(color: Colors.white.withValues(alpha: 0.8)),
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: 25,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  // Server Icon with premium border
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
-                  ],
-                ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: CachedNetworkImage(
+                        imageUrl: iconUrl,
+                        fit: BoxFit.cover,
+                        errorWidget: (context, url, error) => const Icon(Icons.discord_rounded, color: Colors.white, size: 30),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'CHANNEL LIST',
+                          style: TextStyle(
+                            color: Colors.indigoAccent,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 2.0,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.server.name,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -331,61 +325,63 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
       ),
       actions: [
         IconButton(
-          icon: Icon(Icons.refresh, color: AppTheme.getOnSurfaceColor(context)),
+          icon: const Icon(Icons.refresh_rounded, color: Colors.white),
           onPressed: () {
             context.read<DiscordProvider>().loadChannels(widget.server.id);
             HapticFeedback.lightImpact();
           },
         ),
+        const SizedBox(width: 8),
       ],
     );
   }
 
   Widget _buildSearchBar() {
     return Container(
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.getSurfaceColor(context),
-        borderRadius: BorderRadius.circular(12),
+        color: AppTheme.darkCardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: _searchQuery.isNotEmpty 
+              ? Colors.indigoAccent.withValues(alpha: 0.4) 
+              : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+          width: 1.5,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: TextField(
         onChanged: _onSearchChanged,
+        style: const TextStyle(color: Colors.white, fontSize: 14),
         decoration: InputDecoration(
           hintText: 'Search channels...',
-          hintStyle: AppTheme.getBodyStyle(
-            context,
-          ).copyWith(color: AppTheme.secondaryTextColor),
-          prefixIcon: Icon(Icons.search, color: AppTheme.secondaryTextColor),
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+          prefixIcon: Icon(
+            Icons.tag_rounded, 
+            color: _searchQuery.isNotEmpty ? Colors.indigoAccent : AppTheme.secondaryTextColor,
+            size: 20,
+          ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: Icon(Icons.clear, color: AppTheme.secondaryTextColor),
-                  onPressed: () {
-                    _onSearchChanged('');
-                  },
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () => _onSearchChanged(''),
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
-        style: AppTheme.getBodyStyle(
-          context,
-        ).copyWith(color: AppTheme.getOnSurfaceColor(context)),
       ),
     );
   }
 
   Widget _buildChannelCard(DiscordChannel channel) {
     final isDisabled = !channel.canOpen;
-    final baseColor = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFF2B2D31)
-        : AppTheme.getSurfaceColor(context);
     final accentColor = const Color(0xFF5865F2);
 
     if (channel.isCategory) {
@@ -414,138 +410,113 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
       );
     }
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: channel.canOpen ? () => _openChannel(channel) : null,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: isDisabled ? baseColor.withValues(alpha: 0.6) : baseColor,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
-            ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.darkCardColor,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
-          child: Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Center(
-                  child: Text(
-                    channel.displayEmoji.isNotEmpty ? channel.displayEmoji : '#',
-                    style: const TextStyle(fontSize: 18),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: channel.canOpen ? () => _openChannel(channel) : null,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        accentColor.withValues(alpha: 0.2),
+                        accentColor.withValues(alpha: 0.05),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+                  ),
+                  child: Center(
+                    child: Text(
+                      channel.displayEmoji.isNotEmpty ? channel.displayEmoji : '#',
+                      style: const TextStyle(fontSize: 20),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            '# ${channel.name}',
-                            style: AppTheme.getBodyStyle(context).copyWith(
-                              color: isDisabled
-                                  ? AppTheme.getOnSurfaceColor(context)
-                                      .withValues(alpha: 0.6)
-                                  : AppTheme.getOnSurfaceColor(context),
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        channel.name,
+                        style: TextStyle(
+                          color: isDisabled
+                              ? Colors.white.withValues(alpha: 0.4)
+                              : Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          letterSpacing: -0.2,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (channel.isNsfw) ...[
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
+                          ),
+                          child: const Text(
+                            'NSFW',
+                            style: TextStyle(color: Colors.redAccent, fontSize: 9, fontWeight: FontWeight.w800),
                           ),
                         ),
-                        if (!channel.canOpen)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'Empty',
-                              style: TextStyle(
-                                color: Colors.orange[600],
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
                       ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        if (channel.isNsfw)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'NSFW',
-                              style: AppTheme.getCaptionStyle(context).copyWith(
-                                color: Colors.red[600],
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (channel.postCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: accentColor.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        channel.postCount > 999
-                            ? '${(channel.postCount / 1000).toStringAsFixed(1)}k'
-                            : '${channel.postCount}',
-                        style: AppTheme.getCaptionStyle(context).copyWith(
-                          color: accentColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 4),
-                  Icon(
-                    Icons.chevron_right,
-                    color: isDisabled
-                        ? AppTheme.secondaryTextColor
-                        : accentColor,
-                    size: 18,
+                    ],
                   ),
-                ],
-              ),
-            ],
+                ),
+                if (channel.postCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      channel.postCount > 999
+                          ? '${(channel.postCount / 1000).toStringAsFixed(1)}k'
+                          : '${channel.postCount}',
+                      style: TextStyle(
+                        color: accentColor.withValues(alpha: 0.9),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  )
+                else if (!channel.canOpen)
+                  const Icon(Icons.lock_rounded, color: Colors.orangeAccent, size: 16),
+                const SizedBox(width: 8),
+                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white24, size: 14),
+              ],
+            ),
           ),
         ),
       ),

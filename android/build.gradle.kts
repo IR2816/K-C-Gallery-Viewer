@@ -8,6 +8,19 @@ allprojects {
     }
 }
 
+subprojects {
+    // Configure namespace for better_player plugin
+    afterEvaluate {
+        if (project.name == "better_player") {
+            extensions.findByName("android")?.let { androidExt ->
+                if (androidExt is com.android.build.gradle.LibraryExtension) {
+                    androidExt.namespace = "com.jhomlala.better_player"
+                }
+            }
+        }
+    }
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
