@@ -740,17 +740,17 @@ class AppTheme {
 
   static BoxShadow getCardShadow() {
     return BoxShadow(
-      color: Colors.black.withValues(alpha: 0.15),
-      blurRadius: 20,
-      offset: const Offset(0, 4),
+      color: Colors.black.withValues(alpha: 0.12),
+      blurRadius: 24,
+      offset: const Offset(0, 8),
     );
   }
 
   static BoxShadow getElevatedShadow() {
     return BoxShadow(
-      color: primaryColor.withValues(alpha: 0.25),
-      blurRadius: 24,
-      offset: const Offset(0, 8),
+      color: primaryColor.withValues(alpha: 0.20),
+      blurRadius: 32,
+      offset: const Offset(0, 12),
     );
   }
 

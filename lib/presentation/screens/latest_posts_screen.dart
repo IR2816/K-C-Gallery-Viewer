@@ -443,7 +443,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppTheme.primaryColor.withValues(alpha: 0.17),
+                    AppTheme.primaryColor.withValues(alpha: 0.10),
                     Colors.transparent,
                   ],
                 ),
@@ -460,7 +460,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppTheme.secondaryAccent.withValues(alpha: 0.12),
+                    AppTheme.secondaryAccent.withValues(alpha: 0.08),
                     Colors.transparent,
                   ],
                 ),

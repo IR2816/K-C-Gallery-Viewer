@@ -149,19 +149,19 @@ class PostCard extends StatelessWidget {
 
           // Service badge pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: serviceColor.withValues(alpha: 0.15),
+              color: serviceColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppTheme.pillRadius),
-              border: Border.all(color: serviceColor.withValues(alpha: 0.4), width: 1),
+              border: Border.all(color: serviceColor.withValues(alpha: 0.3), width: 1),
             ),
             child: Text(
               post.service.toUpperCase(),
               style: TextStyle(
                 color: serviceColor,
                 fontSize: 9,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.5,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
               ),
             ),
           ),
@@ -286,7 +286,7 @@ class PostCard extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -336,12 +336,12 @@ class PostCard extends StatelessWidget {
 
           // Title caption
           if (post.title.isNotEmpty) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: 10),
             Text(
               post.title,
               style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
                 color: AppTheme.darkPrimaryTextColor,
                 height: 1.4,
               ),

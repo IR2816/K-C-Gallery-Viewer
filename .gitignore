@@ -88,3 +88,5 @@ app.*.map.json
 
 
 task.md.resolved
+analyze_output.txt
+format_error.txt

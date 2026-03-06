@@ -106,13 +106,13 @@ class _CreatorCardState extends State<CreatorCard> with SingleTickerProviderStat
                 boxShadow: [AppTheme.getCardShadow()],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 child: Row(
                   children: [
                     // Story-ring avatar
                     _buildAvatar(serviceColor),
 
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 16),
 
                     // Name + service info
                     Expanded(
@@ -125,7 +125,7 @@ class _CreatorCardState extends State<CreatorCard> with SingleTickerProviderStat
                                 child: Text(
                                   widget.creator.name,
                                   style: TextStyle(
-                                    fontSize: 15,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w700,
                                     color: isDark
                                         ? AppTheme.darkPrimaryTextColor
@@ -137,18 +137,19 @@ class _CreatorCardState extends State<CreatorCard> with SingleTickerProviderStat
                               ),
                               if (widget.experimentalBadge)
                                 Container(
-                                  margin: const EdgeInsets.only(left: 6),
-                                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                  margin: const EdgeInsets.only(left: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                   decoration: BoxDecoration(
                                     color: AppTheme.warningColor.withValues(alpha: 0.15),
                                     borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                                   ),
-                                  child: Text(
+                                  child: const Text(
                                     'EXP',
                                     style: TextStyle(
                                       color: AppTheme.warningColor,
-                                      fontSize: 8,
-                                      fontWeight: FontWeight.w700,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.5,
                                     ),
                                   ),
                                 ),

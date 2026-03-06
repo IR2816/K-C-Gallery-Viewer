@@ -352,7 +352,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 (_activeApiSource == ApiSource.kemono
                         ? AppTheme.primaryColor
                         : AppTheme.accentColor)
-                    .withValues(alpha: 0.16),
+                    .withValues(
+                      alpha: Theme.of(context).brightness == Brightness.dark
+                          ? 0.16
+                          : 0.08,
+                    ),
                 Colors.transparent,
               ],
             ),
@@ -366,12 +370,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ShaderMask(
               shaderCallback: (bounds) =>
                   AppTheme.primaryGradient.createShader(bounds),
-              child: const Text(
+              child: Text(
                 'Post Detail',
                 style: TextStyle(
                   fontWeight: FontWeight.w900,
                   fontSize: 28,
-                  color: Colors.white,
+                  color: AppTheme.getPrimaryTextColor(context),
                   letterSpacing: -0.9,
                   height: 1,
                 ),
@@ -384,7 +388,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.85),
+                color: AppTheme.getSecondaryTextColor(context, opacity: 0.85),
               ),
             ),
           ],
@@ -404,7 +408,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 ),
               ),
             ),
-          // Refresh button with loading indicator
+          // We are moving Download and Share to the Bottom Action Bar,
+          // but we keep Refresh here if not from saved posts
           if (!widget.isFromSavedPosts)
             IconButton(
               icon: _isRefreshingContent
@@ -425,23 +430,10 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               onPressed: _isRefreshingContent ? null : _refreshContent,
               tooltip: 'Refresh Post',
             ),
-          IconButton(
-            icon: Icon(
-              Icons.download,
-              color: AppTheme.getOnSurfaceColor(context),
-            ),
-            onPressed: _downloadAllFiles,
-            tooltip: 'Download All',
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.share,
-              color: AppTheme.getOnBackgroundColor(context),
-            ),
-            onPressed: _sharePost,
-          ),
         ],
       ),
+      // Introducing Bottom Action Bar for modern UX
+      bottomNavigationBar: _buildBottomActionBar(),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppTheme.primaryColor),
@@ -507,7 +499,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          AppTheme.primaryColor.withValues(alpha: 0.12),
+                          AppTheme.primaryColor.withValues(
+                            alpha:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? 0.08
+                                : 0.04,
+                          ),
                           Colors.transparent,
                         ],
                       ),
@@ -524,7 +521,12 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       shape: BoxShape.circle,
                       gradient: RadialGradient(
                         colors: [
-                          AppTheme.accentColor.withValues(alpha: 0.09),
+                          AppTheme.accentColor.withValues(
+                            alpha:
+                                Theme.of(context).brightness == Brightness.dark
+                                ? 0.06
+                                : 0.03,
+                          ),
                           Colors.transparent,
                         ],
                       ),
@@ -560,19 +562,101 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
+  // New modern bottom action bar
+  Widget _buildBottomActionBar() {
+    final cardBg = AppTheme.getElevatedSurfaceColorContext(context);
+    final borderColor = AppTheme.getBorderColor(context);
+
+    return Container(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.paddingOf(context).bottom + 12,
+        top: 12,
+        left: 16,
+        right: 16,
+      ),
+      decoration: BoxDecoration(
+        color: cardBg.withValues(alpha: 0.95),
+        border: Border(top: BorderSide(color: borderColor, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            offset: const Offset(0, -4),
+            blurRadius: 16,
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildBottomAction(
+            icon: _currentPost.saved ? Icons.bookmark : Icons.bookmark_border,
+            label: _currentPost.saved ? 'Saved' : 'Save',
+            color: _currentPost.saved
+                ? AppTheme.primaryColor
+                : AppTheme.getSecondaryTextColor(context),
+            onTap: _toggleSave,
+          ),
+          _buildBottomAction(
+            icon: Icons.share_rounded,
+            label: 'Share',
+            color: AppTheme.getSecondaryTextColor(context),
+            onTap: _sharePost,
+          ),
+          _buildBottomAction(
+            icon: Icons.download_rounded,
+            label: 'Download All',
+            color: AppTheme.getSecondaryTextColor(context),
+            onTap: _downloadAllFiles,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomAction({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSourceControlCard() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: AppTheme.darkCardColor.withValues(alpha: 0.9),
+        color: AppTheme.getCardColor(context).withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.85),
+          color: AppTheme.getBorderColor(context).withValues(alpha: 0.85),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.2
+                  : 0.08,
+            ),
             blurRadius: 16,
             spreadRadius: -8,
             offset: const Offset(0, 10),
@@ -581,17 +665,17 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.cloud_sync_rounded,
             size: 18,
-            color: AppTheme.darkSecondaryTextColor,
+            color: AppTheme.getSecondaryTextColor(context),
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               'Switch source and reload instantly',
               style: TextStyle(
-                color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.95),
+                color: AppTheme.getSecondaryTextColor(context, opacity: 0.95),
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
               ),
@@ -600,9 +684,15 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           Container(
             padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: AppTheme.darkSurfaceColor.withValues(alpha: 0.82),
+              color: AppTheme.getElevatedSurfaceColorContext(
+                context,
+              ).withValues(alpha: 0.82),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+              border: Border.all(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.16)
+                    : Colors.black.withValues(alpha: 0.08),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -658,7 +748,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
         child: Text(
           label,
           style: TextStyle(
-            color: isActive ? Colors.white : AppTheme.darkSecondaryTextColor,
+            color: isActive
+                ? Colors.white
+                : AppTheme.getSecondaryTextColor(context),
             fontSize: 11,
             fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
           ),
@@ -678,17 +770,23 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.darkCardColor.withValues(alpha: 0.96),
-            AppTheme.darkSurfaceColor.withValues(alpha: 0.92),
+            AppTheme.getCardColor(context).withValues(alpha: 0.96),
+            AppTheme.getElevatedSurfaceColorContext(
+              context,
+            ).withValues(alpha: 0.92),
           ],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.9),
+          color: AppTheme.getBorderColor(context).withValues(alpha: 0.9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.22),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.22
+                  : 0.08,
+            ),
             blurRadius: 18,
             spreadRadius: -10,
             offset: const Offset(0, 10),
@@ -720,8 +818,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                     children: [
                       Text(
                         _currentPost.user,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppTheme.getPrimaryTextColor(context),
                           fontSize: 16.5,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.2,
@@ -757,16 +855,18 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                           Icon(
                             Icons.schedule_rounded,
                             size: 12,
-                            color: AppTheme.darkSecondaryTextColor.withValues(
-                              alpha: 0.9,
+                            color: AppTheme.getSecondaryTextColor(
+                              context,
+                              opacity: 0.9,
                             ),
                           ),
                           const SizedBox(width: 3),
                           Text(
                             _formatDate(_currentPost.published.toString()),
                             style: TextStyle(
-                              color: AppTheme.darkSecondaryTextColor.withValues(
-                                alpha: 0.95,
+                              color: AppTheme.getSecondaryTextColor(
+                                context,
+                                opacity: 0.95,
                               ),
                               fontSize: 11.5,
                               fontWeight: FontWeight.w500,
@@ -784,8 +884,8 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           if (_currentPost.title.isNotEmpty)
             Text(
               _currentPost.title,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppTheme.getPrimaryTextColor(context),
                 fontSize: 19,
                 fontWeight: FontWeight.w800,
                 height: 1.3,
@@ -822,21 +922,23 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: AppTheme.darkElevatedSurfaceColor.withValues(alpha: 0.82),
+        color: AppTheme.getElevatedSurfaceColorContext(
+          context,
+        ).withValues(alpha: 0.82),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.75),
+          color: AppTheme.getBorderColor(context).withValues(alpha: 0.75),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: AppTheme.darkSecondaryTextColor),
+          Icon(icon, size: 13, color: AppTheme.getSecondaryTextColor(context)),
           const SizedBox(width: 5),
           Text(
             text,
-            style: const TextStyle(
-              color: AppTheme.darkSecondaryTextColor,
+            style: TextStyle(
+              color: AppTheme.getSecondaryTextColor(context),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -2598,13 +2700,9 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? Colors.grey.withValues(alpha: 0.3)
-              : Colors.grey.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: AppTheme.getBorderColor(context)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -3590,17 +3688,13 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             width: double.infinity,
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.black.withValues(alpha: 0.16)
-                  : Colors.white.withValues(alpha: 0.6),
+              color: AppTheme.getSurfaceColor(context).withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               comment.content,
               style: TextStyle(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : Colors.grey.shade800,
+                color: AppTheme.getPrimaryTextColor(context),
                 fontSize: 14,
                 height: 1.5,
               ),
@@ -3681,6 +3775,38 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       }
     } catch (e) {
       return dateString;
+    }
+  }
+
+  Future<void> _toggleSave() async {
+    final postsProvider = context.read<PostsProvider>();
+    try {
+      await postsProvider.toggleSavePost(_currentPost);
+      setState(() {
+        _fullPost = _currentPost.copyWith(saved: !_currentPost.saved);
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              _currentPost.saved ? 'Post saved' : 'Post removed from saved',
+            ),
+            duration: const Duration(seconds: 2),
+            backgroundColor: _currentPost.saved
+                ? AppTheme.primaryColor
+                : AppTheme.getSecondaryTextColor(context),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update saved status: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

@@ -548,13 +548,13 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
           color: AppTheme.getBackgroundColor(context),
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Center(
-            child: Container(
+              child: Container(
               width: MediaQuery.of(context).size.width * 0.85,
               height: 46,
               decoration: BoxDecoration(
-                color: AppTheme.darkCardColor,
+                color: AppTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                border: Border.all(color: AppTheme.getBorderColor(context, opacity: 0.05)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.2),
@@ -568,7 +568,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                 dividerColor: Colors.transparent,
                 indicatorColor: Colors.transparent,
                 labelColor: Colors.white,
-                unselectedLabelColor: AppTheme.darkSecondaryTextColor,
+                unselectedLabelColor: AppTheme.getSecondaryTextColor(context),
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: BoxDecoration(
                   gradient: AppTheme.primaryGradient,
@@ -703,15 +703,15 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       ),
       child: CircleAvatar(
         radius: 32,
-        backgroundColor: AppTheme.darkCardColor,
+        backgroundColor: AppTheme.getCardColor(context),
         backgroundImage: CachedNetworkImageProvider(
           iconUrl,
           headers: _getCoomerHeaders(iconUrl),
         ),
         onBackgroundImageError: (error, stackTrace) {},
-        child: const Icon(
+        child: Icon(
           Icons.person,
-          color: AppTheme.darkSecondaryTextColor,
+          color: AppTheme.getSecondaryTextColor(context),
           size: 32,
         ),
       ),
@@ -929,13 +929,13 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.darkCardColor.withValues(alpha: 0.96),
-            AppTheme.darkSurfaceColor.withValues(alpha: 0.92),
+            AppTheme.getCardColor(context).withValues(alpha: 0.96),
+            AppTheme.getSurfaceColorContext(context).withValues(alpha: 0.92),
           ],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.85),
+          color: AppTheme.getBorderColor(context).withValues(alpha: 0.85),
         ),
         boxShadow: [
           BoxShadow(
@@ -962,7 +962,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                     ],
                   ),
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: accentColor.withValues(alpha: 0.4)),
+border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                 ),
                 child: Icon(
                   Icons.dashboard_customize_rounded,
@@ -977,8 +977,8 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppTheme.getPrimaryTextColor(context),
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.3,
@@ -988,7 +988,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: AppTheme.darkSecondaryTextColor.withValues(
+                        color: AppTheme.getSecondaryTextColor(context).withValues(
                           alpha: 0.95,
                         ),
                         fontSize: 12,
