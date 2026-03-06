@@ -32,11 +32,11 @@ class AppTheme {
   // ═══════════════════════════════════════════════
   // LIGHT THEME SURFACES
   // ═══════════════════════════════════════════════
-  static const Color lightBackgroundColor = Color(0xFFF5F5FF);
+  static const Color lightBackgroundColor = Color(0xFFFAF9FF);
   static const Color lightSurfaceColor = Color(0xFFFFFFFF);
-  static const Color lightCardColor = Color(0xFFFFFFFF);
-  static const Color lightElevatedSurfaceColor = Color(0xFFF0EFFF);
-  static const Color lightBorderColor = Color(0xFFE8E6FF);
+  static const Color lightCardColor = Color(0xFFFEFDFF);
+  static const Color lightElevatedSurfaceColor = Color(0xFFF3F1FF);
+  static const Color lightBorderColor = Color(0xFFE2DFFF);
 
   // ═══════════════════════════════════════════════
   // DARK TEXT COLORS
@@ -759,6 +759,46 @@ class AppTheme {
       color: color.withValues(alpha: 0.35),
       blurRadius: 20,
       spreadRadius: -4,
+      offset: const Offset(0, 4),
+    );
+  }
+
+  /// Get card gradient based on current theme
+  static LinearGradient getContextCardGradient(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? getCardGradient()
+        : getLightCardGradient();
+  }
+
+  /// Get icon color for current theme
+  static Color getIconColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkSecondaryTextColor
+        : lightSecondaryTextColor;
+  }
+
+  /// Get elevated surface color that respects theme brightness
+  static Color getElevatedSurfaceColorContext(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkElevatedSurfaceColor
+        : lightElevatedSurfaceColor;
+  }
+
+  /// Get surface color with brightness awareness
+  static Color getSurfaceColorContext(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkSurfaceColor
+        : lightSurfaceColor;
+  }
+
+  /// Get appropriate shadow for light or dark theme
+  static BoxShadow getThemeAwareShadow(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return BoxShadow(
+      color: isDark
+          ? Colors.black.withValues(alpha: 0.2)
+          : Colors.black.withValues(alpha: 0.08),
+      blurRadius: 12,
       offset: const Offset(0, 4),
     );
   }

@@ -567,8 +567,12 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     Widget? child,
     EdgeInsetsGeometry margin = const EdgeInsets.only(right: 8),
   }) {
-    final activeColor = accentColor ?? AppTheme.darkSecondaryTextColor;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeColor = accentColor ?? AppTheme.getSecondaryTextColor(context);
     final isActive = accentColor != null;
+    final bgColor = isDark
+        ? AppTheme.darkCardColor.withValues(alpha: 0.84)
+        : AppTheme.lightElevatedSurfaceColor.withValues(alpha: 0.6);
 
     return GestureDetector(
       onTap: onTap,
@@ -585,19 +589,17 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
                   ],
                 )
               : null,
-          color: isActive
-              ? null
-              : AppTheme.darkCardColor.withValues(alpha: 0.84),
+          color: isActive ? null : bgColor,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
             color: isActive
                 ? activeColor.withValues(alpha: 0.45)
-                : AppTheme.darkBorderColor,
+                : AppTheme.getBorderColor(context),
           ),
           boxShadow: [
             BoxShadow(
               color: (isActive ? activeColor : Colors.black).withValues(
-                alpha: isActive ? 0.2 : 0.25,
+                alpha: isDark ? (isActive ? 0.2 : 0.25) : 0.08,
               ),
               blurRadius: 12,
               spreadRadius: -6,
@@ -611,7 +613,9 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
               Icon(
                 icon,
                 size: 20,
-                color: isActive ? activeColor : AppTheme.darkSecondaryTextColor,
+                color: isActive
+                    ? activeColor
+                    : AppTheme.getSecondaryTextColor(context),
               ),
         ),
       ),
@@ -623,18 +627,23 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       {'id': 'kemono', 'label': 'Kemono'},
       {'id': 'coomer', 'label': 'Coomer'},
     ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: AppTheme.darkSurfaceColor.withValues(alpha: 0.82),
+        color: isDark
+            ? AppTheme.darkSurfaceColor.withValues(alpha: 0.82)
+            : AppTheme.lightElevatedSurfaceColor.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.85),
+          color: AppTheme.getBorderColor(context, opacity: 0.85),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.08),
             blurRadius: 18,
             spreadRadius: -10,
             offset: const Offset(0, 10),
@@ -647,10 +656,12 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
             child: Container(
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: AppTheme.darkCardColor.withValues(alpha: 0.75),
+                color: isDark
+                    ? AppTheme.darkCardColor.withValues(alpha: 0.75)
+                    : AppTheme.lightCardColor.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                 border: Border.all(
-                  color: AppTheme.darkBorderColor.withValues(alpha: 0.8),
+                  color: AppTheme.getBorderColor(context, opacity: 0.8),
                 ),
               ),
               child: Row(
@@ -927,6 +938,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
   }
 
   Widget _buildPaginationBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final totalLoadedPages = (_posts.length / _pageSize).ceil().clamp(1, 9999);
     final canGoPrev = _currentPage > 1;
     final canGoNext = _hasMore || _currentPage < totalLoadedPages;
@@ -935,17 +947,26 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 108),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.darkCardColor.withValues(alpha: 0.94),
-            AppTheme.darkSurfaceColor.withValues(alpha: 0.94),
-          ],
-        ),
+        gradient: isDark
+            ? LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.darkCardColor.withValues(alpha: 0.94),
+                  AppTheme.darkSurfaceColor.withValues(alpha: 0.94),
+                ],
+              )
+            : LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppTheme.lightCardColor.withValues(alpha: 0.8),
+                  AppTheme.lightElevatedSurfaceColor.withValues(alpha: 0.8),
+                ],
+              ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.9),
+          color: AppTheme.getBorderColor(context, opacity: 0.9),
         ),
         boxShadow: [
           BoxShadow(

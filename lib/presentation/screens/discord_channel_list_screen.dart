@@ -337,10 +337,11 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
   }
 
   Widget _buildSearchBar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.darkCardColor,
+        color: isDark ? AppTheme.darkCardColor : AppTheme.lightCardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _searchQuery.isNotEmpty 
@@ -350,7 +351,9 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.2)
+                : Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -358,18 +361,29 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
       ),
       child: TextField(
         onChanged: _onSearchChanged,
-        style: const TextStyle(color: Colors.white, fontSize: 14),
+        style: TextStyle(
+          color: isDark ? Colors.white : AppTheme.lightPrimaryTextColor,
+          fontSize: 14,
+        ),
         decoration: InputDecoration(
           hintText: 'Search channels...',
-          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+          hintStyle: TextStyle(
+            color: isDark
+                ? Colors.white.withValues(alpha: 0.4)
+                : AppTheme.lightSecondaryTextColor.withValues(alpha: 0.6),
+          ),
           prefixIcon: Icon(
             Icons.tag_rounded, 
-            color: _searchQuery.isNotEmpty ? Colors.indigoAccent : AppTheme.secondaryTextColor,
+            color: _searchQuery.isNotEmpty ? Colors.indigoAccent : AppTheme.getIconColor(context),
             size: 20,
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.close_rounded, size: 18),
+                  icon: Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: isDark ? Colors.white : AppTheme.lightPrimaryTextColor,
+                  ),
                   onPressed: () => _onSearchChanged(''),
                 )
               : null,
@@ -383,6 +397,7 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
   Widget _buildChannelCard(DiscordChannel channel) {
     final isDisabled = !channel.canOpen;
     final accentColor = const Color(0xFF5865F2);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (channel.isCategory) {
       return Padding(
@@ -392,14 +407,14 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
             Icon(
               Icons.folder_open,
               size: 16,
-              color: AppTheme.secondaryTextColor,
+              color: AppTheme.getIconColor(context),
             ),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 channel.name.toUpperCase(),
                 style: AppTheme.getCaptionStyle(context).copyWith(
-                  color: AppTheme.secondaryTextColor,
+                  color: AppTheme.getSecondaryTextColor(context),
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.6,
                 ),
@@ -413,14 +428,16 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppTheme.darkCardColor,
+        color: isDark ? AppTheme.darkCardColor : AppTheme.lightCardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.1)
+                : Colors.black.withValues(alpha: 0.03),
             blurRadius: 6,
             offset: const Offset(0, 3),
           ),

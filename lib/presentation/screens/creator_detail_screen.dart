@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:html/parser.dart' as html_parser;
@@ -70,7 +69,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
   final Map<String, Future<Size>> _imageSizeCache = {};
   Future<List<_LinkedAccount>>? _linkedAccountsFuture;
   late ApiSource _activeApiSource;
-  bool _isSwitchingSource = false;
+  final bool _isSwitchingSource = false;
 
   // State preservation
   @override
@@ -143,35 +142,6 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     }
   }
 
-  Future<void> _switchApiSource(ApiSource targetSource) async {
-    if (_isSwitchingSource || targetSource == _activeApiSource) {
-      return;
-    }
-
-    HapticFeedback.lightImpact();
-    _showDomainTransitionAnimation(_activeApiSource, targetSource);
-    final postsProvider = context.read<PostsProvider>();
-
-    setState(() {
-      _isSwitchingSource = true;
-      _activeApiSource = targetSource;
-      _cachedMediaItems = [];
-      _mediaCacheKey = null;
-      _linkedAccountsFuture = _fetchLinkedAccounts();
-    });
-
-    try {
-      postsProvider.clearPosts();
-      await _loadCreatorPosts();
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSwitchingSource = false;
-        });
-      }
-    }
-  }
-
   Future<List<_LinkedAccount>> _fetchLinkedAccounts() async {
     try {
       final repository = context.read<KemonoRepository>();
@@ -189,96 +159,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     }
   }
 
-  void _showDomainTransitionAnimation(ApiSource from, ApiSource to) {
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-
-    final fromLabel = from == ApiSource.kemono ? 'Kemono' : 'Coomer';
-    final toLabel = to == ApiSource.kemono ? 'Kemono' : 'Coomer';
-    final accent = to == ApiSource.kemono
-        ? AppTheme.primaryColor
-        : const Color(0xFFFF2D70);
-
-    entry = OverlayEntry(
-      builder: (context) => IgnorePointer(
-        child: TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 460),
-          tween: Tween(begin: 0, end: 1),
-          curve: Curves.easeOutCubic,
-          onEnd: () => entry.remove(),
-          builder: (context, value, child) {
-            return ColoredBox(
-              color: Colors.black.withValues(alpha: 0.18 * (1 - value)),
-              child: Center(
-                child: Opacity(
-                  opacity: (1 - (value - 0.65).clamp(0, 0.35) / 0.35).clamp(
-                    0,
-                    1,
-                  ),
-                  child: Transform.scale(
-                    scale: 0.92 + (0.08 * value),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.darkCardColor.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: accent.withValues(alpha: 0.55),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accent.withValues(alpha: 0.28),
-                            blurRadius: 16,
-                            spreadRadius: -8,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            fromLabel,
-                            style: const TextStyle(
-                              color: AppTheme.darkSecondaryTextColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: accent,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            toLabel,
-                            style: TextStyle(
-                              color: accent,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-
-    overlay.insert(entry);
-  }
-
-  // PERFORMANCE OPTIMIZATION - Cache media items once per posts snapshot
+  // PERFORMANCE OPTIMIZATION
   void _ensureMediaCache(List<Post> visiblePosts) {
     final key = visiblePosts.isEmpty
         ? 'empty'
@@ -651,90 +532,13 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
 
             // Avatar with glow
             Positioned(left: 16, bottom: 12, child: _buildCreatorAvatar()),
-            Positioned(right: 16, bottom: 18, child: _buildApiSourceSwitcher()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildApiSourceSwitcher() {
-    return Container(
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: AppTheme.darkCardColor.withValues(alpha: 0.88),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildApiSourceChip(
-            source: ApiSource.kemono,
-            label: 'Kemono',
-            color: AppTheme.primaryColor,
-          ),
-          const SizedBox(width: 4),
-          _buildApiSourceChip(
-            source: ApiSource.coomer,
-            label: 'Coomer',
-            color: AppTheme.accentColor,
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildApiSourceChip({
-    required ApiSource source,
-    required String label,
-    required Color color,
-  }) {
-    final isActive = source == _activeApiSource;
-    return GestureDetector(
-      onTap: _isSwitchingSource ? null : () => _switchApiSource(source),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-        decoration: BoxDecoration(
-          gradient: isActive
-              ? LinearGradient(
-                  colors: [
-                    color.withValues(alpha: 0.98),
-                    color.withValues(alpha: 0.72),
-                  ],
-                )
-              : null,
-          color: isActive ? null : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isActive
-                ? color.withValues(alpha: 0.95)
-                : Colors.transparent,
-          ),
-          boxShadow: isActive
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    spreadRadius: -8,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isActive ? Colors.white : AppTheme.darkSecondaryTextColor,
-            fontSize: 11,
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildTabs() {
     return SliverPersistentHeader(
