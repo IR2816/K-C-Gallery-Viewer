@@ -10,11 +10,15 @@ class AppTheme {
   // ═══════════════════════════════════════════════
   // BRAND COLORS
   // ═══════════════════════════════════════════════
-  static const Color primaryColor = Color(0xFF7C4DFF);       // More vibrant Indigo
-  static const Color primaryDarkColor = Color(0xFF6200EA);   // Deeper vibrant purple
-  static const Color primaryLightColor = Color(0xFFB388FF);  // Lighter vibrant lavender
-  static const Color accentColor = Color(0xFFFF2D70);        // More vibrant Rose
-  static const Color secondaryAccent = Color(0xFF00E5FF);    // Brighter Teal
+  static const Color primaryColor = Color(0xFF7C4DFF); // More vibrant Indigo
+  static const Color primaryDarkColor = Color(
+    0xFF6200EA,
+  ); // Deeper vibrant purple
+  static const Color primaryLightColor = Color(
+    0xFFB388FF,
+  ); // Lighter vibrant lavender
+  static const Color accentColor = Color(0xFFFF2D70); // More vibrant Rose
+  static const Color secondaryAccent = Color(0xFF00E5FF); // Brighter Teal
 
   // ═══════════════════════════════════════════════
   // DARK THEME SURFACES
@@ -145,8 +149,8 @@ class AppTheme {
   static BoxDecoration glassDecoration(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return BoxDecoration(
-      color: isDark 
-          ? Colors.black.withValues(alpha: 0.3) 
+      color: isDark
+          ? Colors.black.withValues(alpha: 0.3)
           : Colors.white.withValues(alpha: 0.4),
       borderRadius: BorderRadius.circular(mdRadius),
       border: Border.all(
@@ -594,6 +598,18 @@ class AppTheme {
     return Theme.of(context).colorScheme.surface;
   }
 
+  static Color getCardColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkCardColor
+        : lightCardColor;
+  }
+
+  static Color getElevatedSurfaceColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkElevatedSurfaceColor
+        : lightElevatedSurfaceColor;
+  }
+
   static Color getOnSurfaceColor(BuildContext context) {
     return Theme.of(context).colorScheme.onSurface;
   }
@@ -608,6 +624,43 @@ class AppTheme {
 
   static Color getPrimaryColor(BuildContext context) {
     return Theme.of(context).colorScheme.primary;
+  }
+
+  static Color getPrimaryTextColor(BuildContext context, {double opacity = 1}) {
+    final base = Theme.of(context).brightness == Brightness.dark
+        ? darkPrimaryTextColor
+        : lightPrimaryTextColor;
+    return base.withValues(alpha: opacity);
+  }
+
+  static Color getSecondaryTextColor(
+    BuildContext context, {
+    double opacity = 1,
+  }) {
+    final base = Theme.of(context).brightness == Brightness.dark
+        ? darkSecondaryTextColor
+        : lightSecondaryTextColor;
+    return base.withValues(alpha: opacity);
+  }
+
+  static Color getBorderColor(BuildContext context, {double opacity = 1}) {
+    final base = Theme.of(context).brightness == Brightness.dark
+        ? darkBorderColor
+        : lightBorderColor;
+    return base.withValues(alpha: opacity);
+  }
+
+  static LinearGradient getBackgroundGradient(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark
+        ? darkBackgroundGradient
+        : lightBackgroundGradient;
+  }
+
+  static double getBottomContentPadding(
+    BuildContext context, {
+    double extra = 24,
+  }) {
+    return MediaQuery.paddingOf(context).bottom + 82 + 10 + extra;
   }
 
   static Color getShadowColor(BuildContext context, {double opacity = 0.1}) {

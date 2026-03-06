@@ -114,7 +114,11 @@ class _SavedScreenState extends State<SavedScreen>
                   ),
                 ],
               ),
-              child: const Icon(Icons.bookmarks_rounded, color: Colors.white, size: 20),
+              child: const Icon(
+                Icons.bookmarks_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
             Column(
@@ -141,7 +145,10 @@ class _SavedScreenState extends State<SavedScreen>
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.75),
+                    color: AppTheme.getSecondaryTextColor(
+                      context,
+                      opacity: 0.76,
+                    ),
                   ),
                 ),
               ],
@@ -156,11 +163,15 @@ class _SavedScreenState extends State<SavedScreen>
               height: 34,
               margin: const EdgeInsets.only(right: 16),
               decoration: BoxDecoration(
-                color: AppTheme.darkCardColor,
+                color: AppTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppTheme.darkBorderColor),
+                border: Border.all(color: AppTheme.getBorderColor(context)),
               ),
-              child: const Icon(Icons.refresh_rounded, size: 16, color: AppTheme.darkSecondaryTextColor),
+              child: Icon(
+                Icons.refresh_rounded,
+                size: 16,
+                color: AppTheme.getSecondaryTextColor(context),
+              ),
             ),
           ),
         ],
@@ -174,14 +185,7 @@ class _SavedScreenState extends State<SavedScreen>
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.getBackgroundColor(context),
-              AppTheme.getBackgroundColor(context).withValues(alpha: 0.98),
-            ],
-          ),
+          gradient: AppTheme.getBackgroundGradient(context),
         ),
         child: Stack(
           children: [
@@ -226,9 +230,11 @@ class _SavedScreenState extends State<SavedScreen>
         return Container(
           height: 44,
           decoration: BoxDecoration(
-            color: AppTheme.darkCardColor,
+            color: AppTheme.getCardColor(context),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppTheme.darkBorderColor.withValues(alpha: 0.5)),
+            border: Border.all(
+              color: AppTheme.getBorderColor(context, opacity: 0.6),
+            ),
           ),
           padding: const EdgeInsets.all(4),
           child: Row(
@@ -259,13 +265,15 @@ class _SavedScreenState extends State<SavedScreen>
                   )
                 : null,
             borderRadius: BorderRadius.circular(11),
-            boxShadow: isSelected ? [
-              BoxShadow(
-                color: Colors.orange.withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ] : null,
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.orange.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -273,13 +281,17 @@ class _SavedScreenState extends State<SavedScreen>
               Icon(
                 icon,
                 size: 16,
-                color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+                color: isSelected
+                    ? Colors.white
+                    : AppTheme.getSecondaryTextColor(context),
               ),
               const SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+                  color: isSelected
+                      ? Colors.white
+                      : AppTheme.getSecondaryTextColor(context),
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
                   fontSize: 14,
                 ),
@@ -518,14 +530,18 @@ class _SavedPostsTabState extends State<SavedPostsTab>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppTheme.darkCardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: Theme.of(context).dividerColor.withValues(alpha: 0.1),
+          color: AppTheme.getBorderColor(context, opacity: 0.35),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.2
+                  : 0.08,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -568,8 +584,10 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                           ? CachedNetworkImage(
                               imageUrl: media['url'],
                               fit: imageFit,
-                              placeholder: (context, url) => _buildPlaceholder(),
-                              errorWidget: (context, url, error) => _buildPlaceholder(),
+                              placeholder: (context, url) =>
+                                  _buildPlaceholder(),
+                              errorWidget: (context, url, error) =>
+                                  _buildPlaceholder(),
                             )
                           : _buildPlaceholder(),
                     ),
@@ -592,7 +610,7 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                     ),
                   ],
                 ),
-                
+
                 // Content
                 Expanded(
                   child: Padding(
@@ -602,8 +620,8 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                       children: [
                         Text(
                           post.title.isNotEmpty ? post.title : 'Untitled Post',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppTheme.getPrimaryTextColor(context),
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.2,
@@ -616,9 +634,13 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                           children: [
                             CircleAvatar(
                               radius: 8,
-                              backgroundColor: serviceColor.withValues(alpha: 0.2),
+                              backgroundColor: serviceColor.withValues(
+                                alpha: 0.2,
+                              ),
                               child: Text(
-                                post.user.isNotEmpty ? post.user[0].toUpperCase() : '?',
+                                post.user.isNotEmpty
+                                    ? post.user[0].toUpperCase()
+                                    : '?',
                                 style: TextStyle(
                                   color: serviceColor,
                                   fontSize: 8,
@@ -631,7 +653,10 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                               child: Text(
                                 post.user,
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.6),
+                                  color: AppTheme.getSecondaryTextColor(
+                                    context,
+                                    opacity: 0.78,
+                                  ),
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -645,12 +670,15 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                     ),
                   ),
                 ),
-                
+
                 // Action Menu
                 PopupMenuButton<String>(
                   icon: Icon(
                     Icons.more_horiz_rounded,
-                    color: Colors.white.withValues(alpha: 0.3),
+                    color: AppTheme.getSecondaryTextColor(
+                      context,
+                      opacity: 0.45,
+                    ),
                     size: 20,
                   ),
                   onSelected: (value) {
@@ -663,9 +691,18 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                       value: 'remove',
                       child: Row(
                         children: [
-                          const Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
+                          const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                            color: Colors.redAccent,
+                          ),
                           const SizedBox(width: 8),
-                          Text('Remove', style: TextStyle(color: Colors.redAccent.withValues(alpha: 0.9))),
+                          Text(
+                            'Remove',
+                            style: TextStyle(
+                              color: Colors.redAccent.withValues(alpha: 0.9),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -682,10 +719,14 @@ class _SavedPostsTabState extends State<SavedPostsTab>
 
   IconData _getServiceIcon(String service) {
     switch (service.toLowerCase()) {
-      case 'patreon': return Icons.local_activity_rounded;
-      case 'fanbox': return Icons.pix_rounded;
-      case 'fantia': return Icons.favorite_rounded;
-      default: return Icons.public_rounded;
+      case 'patreon':
+        return Icons.local_activity_rounded;
+      case 'fanbox':
+        return Icons.pix_rounded;
+      case 'fantia':
+        return Icons.favorite_rounded;
+      default:
+        return Icons.public_rounded;
     }
   }
 
@@ -694,12 +735,12 @@ class _SavedPostsTabState extends State<SavedPostsTab>
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: Colors.grey[800],
+        color: AppTheme.getElevatedSurfaceColor(context),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Icon(
         Icons.image_not_supported,
-        color: Colors.white.withValues(alpha: 0.3),
+        color: AppTheme.getSecondaryTextColor(context, opacity: 0.45),
         size: 24,
       ),
     );
@@ -821,17 +862,21 @@ class _SavedPostsTabState extends State<SavedPostsTab>
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppTheme.darkCardColor,
+                color: AppTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: _searchController.text.isNotEmpty 
-                      ? AppTheme.primaryColor.withValues(alpha: 0.4) 
-                      : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  color: _searchController.text.isNotEmpty
+                      ? AppTheme.primaryColor.withValues(alpha: 0.4)
+                      : AppTheme.getBorderColor(context, opacity: 0.35),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
+                    color: Colors.black.withValues(
+                      alpha: Theme.of(context).brightness == Brightness.dark
+                          ? 0.15
+                          : 0.06,
+                    ),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -841,31 +886,46 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                 controller: _searchController,
                 onChanged: (value) {
                   _searchDebounce?.cancel();
-                  _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-                    if (!mounted) return;
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  });
+                  _searchDebounce = Timer(
+                    const Duration(milliseconds: 300),
+                    () {
+                      if (!mounted) return;
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  );
                 },
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.getPrimaryTextColor(context),
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Search collection...',
-                  hintStyle: TextStyle(color: AppTheme.secondaryTextColor.withValues(alpha: 0.6)),
+                  hintStyle: TextStyle(
+                    color: AppTheme.getSecondaryTextColor(
+                      context,
+                      opacity: 0.6,
+                    ),
+                  ),
                   prefixIcon: Icon(
                     Icons.search_rounded,
-                    color: _searchController.text.isNotEmpty ? AppTheme.primaryColor : AppTheme.secondaryTextColor,
+                    color: _searchController.text.isNotEmpty
+                        ? AppTheme.primaryColor
+                        : AppTheme.getSecondaryTextColor(context),
                     size: 20,
                   ),
-                  suffixIcon: _searchController.text.isNotEmpty 
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() { _searchQuery = ''; });
-                        },
-                      )
-                    : null,
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -881,7 +941,7 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                     Text(
                       '${filteredPosts.length} posts',
                       style: TextStyle(
-                        color: AppTheme.secondaryTextColor,
+                        color: AppTheme.getSecondaryTextColor(context),
                         fontSize: 12,
                       ),
                     ),
@@ -889,7 +949,7 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                     PopupMenuButton<String>(
                       icon: Icon(
                         Icons.sort,
-                        color: AppTheme.secondaryTextColor,
+                        color: AppTheme.getSecondaryTextColor(context),
                         size: 20,
                       ),
                       onSelected: (value) {
@@ -923,11 +983,13 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                 color: AppTheme.getOnSurfaceColor(context),
                 child: filteredPosts.isEmpty
                     ? (provider.savedPosts.isNotEmpty && hasActiveFilters
-                        ? _buildFilteredEmptyState()
-                        : _buildEmptyState())
+                          ? _buildFilteredEmptyState()
+                          : _buildEmptyState())
                     : ListView.builder(
                         controller: _scrollController,
-                        padding: const EdgeInsets.only(bottom: 16),
+                        padding: EdgeInsets.only(
+                          bottom: AppTheme.getBottomContentPadding(context),
+                        ),
                         itemCount:
                             filteredPosts.length +
                             (provider.hasMoreSavedPosts ? 1 : 0),
@@ -1105,7 +1167,9 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
     final serviceColor = _getServiceColor(creator.service);
     final bannerUrl = _buildCreatorBannerUrl(creator);
     final iconUrl = _buildCreatorIconUrl(creator);
-    final favoritesText = creator.fans != null ? '${creator.fans} favorites' : '${creator.indexed} posts';
+    final favoritesText = creator.fans != null
+        ? '${creator.fans} favorites'
+        : '${creator.indexed} posts';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1131,13 +1195,15 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                   imageUrl: bannerUrl,
                   httpHeaders: _getCoomerHeaders(bannerUrl),
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: serviceColor.withValues(alpha: 0.1),
-                  ),
+                  placeholder: (context, url) =>
+                      Container(color: serviceColor.withValues(alpha: 0.1)),
                   errorWidget: (context, url, error) => Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [serviceColor.withValues(alpha: 0.4), Colors.black],
+                        colors: [
+                          serviceColor.withValues(alpha: 0.4),
+                          Colors.black,
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -1169,7 +1235,10 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: serviceColor.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(8),
@@ -1191,7 +1260,9 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.4),
                           shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.1),
+                          ),
                         ),
                         child: const Icon(
                           Icons.bookmark_remove_rounded,
@@ -1203,7 +1274,7 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                   ],
                 ),
               ),
-              
+
               // Content (Avatar + Text)
               Material(
                 color: Colors.transparent,
@@ -1229,7 +1300,10 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                           height: 50,
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              width: 1.5,
+                            ),
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
@@ -1239,8 +1313,13 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                               fit: BoxFit.cover,
                               errorWidget: (context, url, error) => Center(
                                 child: Text(
-                                  creator.name.isNotEmpty ? creator.name[0].toUpperCase() : '?',
-                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                  creator.name.isNotEmpty
+                                      ? creator.name[0].toUpperCase()
+                                      : '?',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1274,7 +1353,11 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                             ],
                           ),
                         ),
-                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white60, size: 16),
+                        const Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          color: Colors.white60,
+                          size: 16,
+                        ),
                       ],
                     ),
                   ),
@@ -1587,17 +1670,21 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: AppTheme.darkCardColor,
+                color: AppTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: _searchController.text.isNotEmpty 
-                      ? AppTheme.primaryColor.withValues(alpha: 0.4) 
-                      : Theme.of(context).dividerColor.withValues(alpha: 0.1),
+                  color: _searchController.text.isNotEmpty
+                      ? AppTheme.primaryColor.withValues(alpha: 0.4)
+                      : AppTheme.getBorderColor(context, opacity: 0.35),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.15),
+                    color: Colors.black.withValues(
+                      alpha: Theme.of(context).brightness == Brightness.dark
+                          ? 0.15
+                          : 0.06,
+                    ),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -1607,31 +1694,46 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                 controller: _searchController,
                 onChanged: (value) {
                   _searchDebounce?.cancel();
-                  _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-                    if (!mounted) return;
-                    setState(() {
-                      _searchQuery = value;
-                    });
-                  });
+                  _searchDebounce = Timer(
+                    const Duration(milliseconds: 300),
+                    () {
+                      if (!mounted) return;
+                      setState(() {
+                        _searchQuery = value;
+                      });
+                    },
+                  );
                 },
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+                style: TextStyle(
+                  color: AppTheme.getPrimaryTextColor(context),
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Search creators...',
-                  hintStyle: TextStyle(color: AppTheme.secondaryTextColor.withValues(alpha: 0.6)),
+                  hintStyle: TextStyle(
+                    color: AppTheme.getSecondaryTextColor(
+                      context,
+                      opacity: 0.6,
+                    ),
+                  ),
                   prefixIcon: Icon(
                     Icons.search_rounded,
-                    color: _searchController.text.isNotEmpty ? AppTheme.primaryColor : AppTheme.secondaryTextColor,
+                    color: _searchController.text.isNotEmpty
+                        ? AppTheme.primaryColor
+                        : AppTheme.getSecondaryTextColor(context),
                     size: 20,
                   ),
-                  suffixIcon: _searchController.text.isNotEmpty 
-                    ? IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() { _searchQuery = ''; });
-                        },
-                      )
-                    : null,
+                  suffixIcon: _searchController.text.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 18),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -1647,7 +1749,7 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                     Text(
                       '${filteredCreators.length} creators',
                       style: TextStyle(
-                        color: AppTheme.secondaryTextColor,
+                        color: AppTheme.getSecondaryTextColor(context),
                         fontSize: 12,
                       ),
                     ),
@@ -1655,7 +1757,7 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                     PopupMenuButton<String>(
                       icon: Icon(
                         Icons.sort,
-                        color: AppTheme.secondaryTextColor,
+                        color: AppTheme.getSecondaryTextColor(context),
                         size: 20,
                       ),
                       onSelected: (value) {
@@ -1690,7 +1792,9 @@ class _FavoriteCreatorsTabState extends State<FavoriteCreatorsTab>
                 child: filteredCreators.isEmpty
                     ? _buildEmptyState()
                     : ListView.builder(
-                        padding: const EdgeInsets.only(bottom: 16),
+                        padding: EdgeInsets.only(
+                          bottom: AppTheme.getBottomContentPadding(context),
+                        ),
                         itemCount: filteredCreators.length,
                         itemBuilder: (context, index) {
                           return _buildCreatorCard(filteredCreators[index]);

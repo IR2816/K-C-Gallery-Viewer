@@ -369,6 +369,19 @@ class _SearchScreenDualState extends State<SearchScreenDual>
         : _kemonoServices;
   }
 
+  Color _surfaceColor(BuildContext context) => AppTheme.getCardColor(context);
+
+  Color _secondaryTextColor(BuildContext context, {double opacity = 1}) {
+    return AppTheme.getSecondaryTextColor(context, opacity: opacity);
+  }
+
+  Color _primaryTextColor(BuildContext context, {double opacity = 1}) {
+    return AppTheme.getPrimaryTextColor(context, opacity: opacity);
+  }
+
+  Color _borderColor(BuildContext context, {double opacity = 1}) {
+    return AppTheme.getBorderColor(context, opacity: opacity);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -398,7 +411,8 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShaderMask(
-                    shaderCallback: (bounds) => AppTheme.primaryGradient.createShader(bounds),
+                    shaderCallback: (bounds) =>
+                        AppTheme.primaryGradient.createShader(bounds),
                     child: const Text(
                       'Discover',
                       style: TextStyle(
@@ -415,7 +429,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
-                      color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.7),
+                      color: _secondaryTextColor(context, opacity: 0.74),
                       letterSpacing: 0.2,
                     ),
                   ),
@@ -425,9 +439,11 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                 Container(
                   margin: const EdgeInsets.only(right: 16),
                   decoration: BoxDecoration(
-                    color: AppTheme.darkCardColor.withValues(alpha: 0.5),
+                    color: _surfaceColor(context).withValues(alpha: 0.72),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppTheme.darkBorderColor.withValues(alpha: 0.5)),
+                    border: Border.all(
+                      color: _borderColor(context, opacity: 0.55),
+                    ),
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.help_outline_rounded, size: 20),
@@ -449,9 +465,17 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                     ),
                     dividerColor: Colors.transparent,
                     labelColor: AppTheme.primaryColor,
-                    unselectedLabelColor: AppTheme.darkSecondaryTextColor,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -0.2),
-                    unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, letterSpacing: -0.2),
+                    unselectedLabelColor: _secondaryTextColor(context),
+                    labelStyle: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                      letterSpacing: -0.2,
+                    ),
+                    unselectedLabelStyle: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14,
+                      letterSpacing: -0.2,
+                    ),
                     tabs: const [
                       Tab(
                         child: Row(
@@ -480,14 +504,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
             ),
             body: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    AppTheme.getBackgroundColor(context).withValues(alpha: 0.8),
-                    AppTheme.getBackgroundColor(context),
-                  ],
-                ),
+                gradient: AppTheme.getBackgroundGradient(context),
               ),
               child: Column(
                 children: [
@@ -506,7 +523,6 @@ class _SearchScreenDualState extends State<SearchScreenDual>
               ),
             ),
           );
-
         },
       ),
     );
@@ -518,12 +534,16 @@ class _SearchScreenDualState extends State<SearchScreenDual>
       child: Container(
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: AppTheme.darkCardColor.withValues(alpha: 0.6),
+          color: _surfaceColor(context).withValues(alpha: 0.72),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppTheme.darkBorderColor.withValues(alpha: 0.5)),
+          border: Border.all(color: _borderColor(context, opacity: 0.55)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
+              color: Colors.black.withValues(
+                alpha: Theme.of(context).brightness == Brightness.dark
+                    ? 0.1
+                    : 0.05,
+              ),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -539,7 +559,6 @@ class _SearchScreenDualState extends State<SearchScreenDual>
       ),
     );
   }
-
 
   Widget _buildApiSourceButton(ApiSource apiSource) {
     final isSelected = _selectedApiSource == apiSource;
@@ -572,15 +591,21 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                 )
               else
                 Icon(
-                  apiSource == ApiSource.kemono ? Icons.star_rounded : Icons.favorite_rounded,
+                  apiSource == ApiSource.kemono
+                      ? Icons.star_rounded
+                      : Icons.favorite_rounded,
                   size: 14,
-                  color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+                  color: isSelected
+                      ? Colors.white
+                      : _secondaryTextColor(context),
                 ),
               const SizedBox(width: 5),
               Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+                  color: isSelected
+                      ? Colors.white
+                      : _secondaryTextColor(context),
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   fontSize: 12,
                 ),
@@ -603,18 +628,27 @@ class _SearchScreenDualState extends State<SearchScreenDual>
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 decoration: BoxDecoration(
-                  color: AppTheme.darkCardColor,
+                  color: _surfaceColor(context),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: _nameSearchController.text.isNotEmpty
                         ? AppTheme.primaryColor.withValues(alpha: 0.8)
-                        : AppTheme.darkBorderColor,
+                        : _borderColor(context),
                     width: 2.0,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: (_nameSearchController.text.isNotEmpty ? AppTheme.primaryColor : Colors.black)
-                          .withValues(alpha: 0.15),
+                      color:
+                          (_nameSearchController.text.isNotEmpty
+                                  ? AppTheme.primaryColor
+                                  : Colors.black)
+                              .withValues(
+                                alpha:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? 0.15
+                                    : 0.08,
+                              ),
                       blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
@@ -624,15 +658,15 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                   controller: _nameSearchController,
                   focusNode: _nameFocusNode,
                   onChanged: (_) => _onNameSearchChanged(),
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: _primaryTextColor(context),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search creator by name...',
                     hintStyle: TextStyle(
-                      color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.5),
+                      color: _secondaryTextColor(context, opacity: 0.6),
                       fontWeight: FontWeight.w500,
                     ),
                     prefixIcon: Container(
@@ -641,7 +675,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                         Icons.search_rounded,
                         color: _nameSearchController.text.isNotEmpty
                             ? AppTheme.primaryColor
-                            : AppTheme.darkSecondaryTextColor,
+                            : _secondaryTextColor(context),
                         size: 24,
                       ),
                     ),
@@ -668,7 +702,6 @@ class _SearchScreenDualState extends State<SearchScreenDual>
         );
       },
     );
-
   }
 
   Widget _buildIdSearchTab(BuildContext context) {
@@ -724,12 +757,12 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                         decoration: BoxDecoration(
                           color: isSelected
                               ? serviceColor.withValues(alpha: 0.15)
-                              : AppTheme.darkCardColor.withValues(alpha: 0.55),
+                              : _surfaceColor(context).withValues(alpha: 0.72),
                           borderRadius: BorderRadius.circular(18),
                           border: Border.all(
                             color: isSelected
                                 ? serviceColor.withValues(alpha: 0.85)
-                                : AppTheme.darkBorderColor.withValues(alpha: 0.5),
+                                : _borderColor(context, opacity: 0.6),
                           ),
                         ),
                         child: Row(
@@ -741,7 +774,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                               size: 16,
                               color: isSelected
                                   ? serviceColor
-                                  : AppTheme.darkSecondaryTextColor,
+                                  : _secondaryTextColor(context),
                             ),
                             const SizedBox(width: 6),
                             Text(
@@ -749,7 +782,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                               style: TextStyle(
                                 color: isSelected
                                     ? serviceColor
-                                    : AppTheme.darkSecondaryTextColor,
+                                    : _secondaryTextColor(context),
                                 fontSize: 12,
                                 fontWeight: isSelected
                                     ? FontWeight.w700
@@ -771,12 +804,12 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                 duration: const Duration(milliseconds: 280),
                 curve: Curves.easeOutCubic,
                 decoration: BoxDecoration(
-                  color: AppTheme.darkCardColor,
+                  color: _surfaceColor(context),
                   borderRadius: BorderRadius.circular(22),
                   border: Border.all(
                     color: _idSearchController.text.isNotEmpty
                         ? AppTheme.primaryColor.withValues(alpha: 0.75)
-                        : AppTheme.darkBorderColor,
+                        : _borderColor(context),
                     width: 1.8,
                   ),
                   boxShadow: [
@@ -785,7 +818,13 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                           (_idSearchController.text.isNotEmpty
                                   ? AppTheme.primaryColor
                                   : Colors.black)
-                              .withValues(alpha: 0.12),
+                              .withValues(
+                                alpha:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? 0.12
+                                    : 0.06,
+                              ),
                       blurRadius: 18,
                       offset: const Offset(0, 8),
                     ),
@@ -794,17 +833,15 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                 child: TextField(
                   controller: _idSearchController,
                   focusNode: _idFocusNode,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: _primaryTextColor(context),
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
                   decoration: InputDecoration(
                     hintText: 'Search by creator ID or keyword...',
                     hintStyle: TextStyle(
-                      color: AppTheme.darkSecondaryTextColor.withValues(
-                        alpha: 0.55,
-                      ),
+                      color: _secondaryTextColor(context, opacity: 0.55),
                     ),
                     prefixIcon: const Icon(
                       Icons.tag_rounded,
@@ -901,7 +938,6 @@ class _SearchScreenDualState extends State<SearchScreenDual>
     BuildContext context,
     CreatorSearchProvider provider,
   ) {
-
     // Show loading state
     if (provider.loading) {
       return Center(
@@ -1074,7 +1110,12 @@ class _SearchScreenDualState extends State<SearchScreenDual>
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: AppTheme.mdPadding),
+      padding: EdgeInsets.fromLTRB(
+        AppTheme.mdPadding,
+        0,
+        AppTheme.mdPadding,
+        AppTheme.getBottomContentPadding(context),
+      ),
       itemCount: provider.creators.length,
       itemBuilder: (context, index) {
         final creator = provider.creators[index];
@@ -1111,13 +1152,15 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                 imageUrl: bannerUrl,
                 httpHeaders: _getCoomerHeaders(bannerUrl),
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: serviceColor.withValues(alpha: 0.1),
-                ),
+                placeholder: (context, url) =>
+                    Container(color: serviceColor.withValues(alpha: 0.1)),
                 errorWidget: (context, url, error) => Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [serviceColor.withValues(alpha: 0.4), Colors.black],
+                      colors: [
+                        serviceColor.withValues(alpha: 0.4),
+                        Colors.black,
+                      ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -1155,7 +1198,9 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                         height: 50,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(12),
@@ -1191,7 +1236,10 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: serviceColor.withValues(alpha: 0.8),
                                     borderRadius: BorderRadius.circular(4),
@@ -1218,7 +1266,11 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                           ],
                         ),
                       ),
-                      const Icon(Icons.arrow_forward_ios, color: Colors.white54, size: 14),
+                      const Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.white54,
+                        size: 14,
+                      ),
                     ],
                   ),
                 ),
@@ -1246,7 +1298,6 @@ class _SearchScreenDualState extends State<SearchScreenDual>
     BuildContext context,
     CreatorSearchProvider provider,
   ) {
-
     return FadeTransition(
       opacity: _fadeAnimation,
       child: Column(
@@ -1278,8 +1329,11 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                 ? _buildEmptySearch(context)
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppTheme.mdPadding,
+                    padding: EdgeInsets.fromLTRB(
+                      AppTheme.mdPadding,
+                      0,
+                      AppTheme.mdPadding,
+                      AppTheme.getBottomContentPadding(context),
                     ),
                     itemCount: provider.nameSearchResults.length,
                     itemBuilder: (context, index) {
@@ -1339,13 +1393,15 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                   imageUrl: bannerUrl,
                   httpHeaders: _getCoomerHeaders(bannerUrl),
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: serviceColor.withValues(alpha: 0.1),
-                  ),
+                  placeholder: (context, url) =>
+                      Container(color: serviceColor.withValues(alpha: 0.1)),
                   errorWidget: (context, url, error) => Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [serviceColor.withValues(alpha: 0.4), Colors.black],
+                        colors: [
+                          serviceColor.withValues(alpha: 0.4),
+                          Colors.black,
+                        ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -1375,7 +1431,10 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                 top: 12,
                 right: 12,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: serviceColor.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(8),
@@ -1408,7 +1467,9 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                     }
                     if (creator != null) {
                       HapticFeedback.lightImpact();
-                      Navigator.of(context).pushNamed('/creator', arguments: creator);
+                      Navigator.of(
+                        context,
+                      ).pushNamed('/creator', arguments: creator);
                     }
                   },
                   child: Padding(

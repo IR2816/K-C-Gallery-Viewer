@@ -96,7 +96,11 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
               gradient: AppTheme.primaryGradient,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.trending_up_rounded, color: Colors.white, size: 18),
+            child: const Icon(
+              Icons.trending_up_rounded,
+              color: Colors.white,
+              size: 18,
+            ),
           ),
           const SizedBox(width: 10),
           // Title
@@ -109,7 +113,9 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 16,
-                    color: isDark ? AppTheme.darkPrimaryTextColor : AppTheme.lightPrimaryTextColor,
+                    color: isDark
+                        ? AppTheme.darkPrimaryTextColor
+                        : AppTheme.lightPrimaryTextColor,
                   ),
                 ),
                 if (popularProvider.totalItems > 0)
@@ -117,7 +123,9 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                     '${popularProvider.totalItems} creators',
                     style: TextStyle(
                       fontSize: 11,
-                      color: isDark ? AppTheme.darkSecondaryTextColor : AppTheme.lightSecondaryTextColor,
+                      color: isDark
+                          ? AppTheme.darkSecondaryTextColor
+                          : AppTheme.lightSecondaryTextColor,
                     ),
                   ),
               ],
@@ -133,16 +141,22 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: isDark ? AppTheme.darkCardColor : AppTheme.lightElevatedSurfaceColor,
+                color: isDark
+                    ? AppTheme.darkCardColor
+                    : AppTheme.lightElevatedSurfaceColor,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: isDark ? AppTheme.darkBorderColor : AppTheme.lightBorderColor,
+                  color: isDark
+                      ? AppTheme.darkBorderColor
+                      : AppTheme.lightBorderColor,
                 ),
               ),
               child: Icon(
                 Icons.refresh_rounded,
                 size: 16,
-                color: isDark ? AppTheme.darkSecondaryTextColor : AppTheme.lightSecondaryTextColor,
+                color: isDark
+                    ? AppTheme.darkSecondaryTextColor
+                    : AppTheme.lightSecondaryTextColor,
               ),
             ),
           ),
@@ -155,7 +169,9 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCardColor : AppTheme.lightElevatedSurfaceColor,
+        color: isDark
+            ? AppTheme.darkCardColor
+            : AppTheme.lightElevatedSurfaceColor,
         borderRadius: BorderRadius.circular(AppTheme.pillRadius),
         border: Border.all(
           color: isDark ? AppTheme.darkBorderColor : AppTheme.lightBorderColor,
@@ -198,7 +214,9 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
         child: Text(
           title,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+            color: isSelected
+                ? Colors.white
+                : AppTheme.getSecondaryTextColor(context),
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             fontSize: 11,
           ),
@@ -224,14 +242,13 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
   }
 
   Widget _buildLoadingState() {
+    final bottomPadding = AppTheme.getBottomContentPadding(context, extra: 0);
     return Container(
       constraints: BoxConstraints(
         maxHeight:
             MediaQuery.of(context).size.height * 0.45, // Match list height
       ),
-      padding: const EdgeInsets.only(
-        bottom: 80,
-      ), // Padding to avoid bottom navigation
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Center(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -250,7 +267,9 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
             Text(
               'Loading popular creators...',
               style: AppTheme.bodyStyle.copyWith(
-                color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.7),
+                color: AppTheme.getOnSurfaceColor(
+                  context,
+                ).withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -260,14 +279,13 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
   }
 
   Widget _buildErrorState(PopularCreatorsProvider popularProvider) {
+    final bottomPadding = AppTheme.getBottomContentPadding(context, extra: 0);
     return Container(
       constraints: BoxConstraints(
         maxHeight:
             MediaQuery.of(context).size.height * 0.45, // Match list height
       ),
-      padding: const EdgeInsets.only(
-        bottom: 80,
-      ), // Padding to avoid bottom navigation
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -302,14 +320,13 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
   }
 
   Widget _buildEmptyState() {
+    final bottomPadding = AppTheme.getBottomContentPadding(context, extra: 0);
     return Container(
       constraints: BoxConstraints(
         maxHeight:
             MediaQuery.of(context).size.height * 0.45, // Match list height
       ),
-      padding: const EdgeInsets.only(
-        bottom: 80,
-      ), // Padding to avoid bottom navigation
+      padding: EdgeInsets.only(bottom: bottomPadding),
       child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -323,7 +340,9 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
             Text(
               'No popular creators found',
               style: AppTheme.bodyStyle.copyWith(
-                color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.7),
+                color: AppTheme.getOnSurfaceColor(
+                  context,
+                ).withValues(alpha: 0.7),
               ),
             ),
           ],
@@ -333,6 +352,7 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
   }
 
   Widget _buildPopularCreatorsGrid(PopularCreatorsProvider popularProvider) {
+    final bottomPadding = AppTheme.getBottomContentPadding(context, extra: 0);
     return Container(
       // Use dynamic height to avoid bottom navigation overlap
       constraints: BoxConstraints(
@@ -352,11 +372,7 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
           return false;
         },
         child: ListView.builder(
-          padding: const EdgeInsets.only(
-            left: 4,
-            right: 4,
-            bottom: 80, // Extra padding to avoid bottom navigation
-          ),
+          padding: EdgeInsets.only(left: 4, right: 4, bottom: bottomPadding),
           itemCount:
               popularProvider.popularCreators.length +
               (popularProvider.isLoadingMore ? 1 : 0),
@@ -404,7 +420,9 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
             Text(
               'Loading more creators...',
               style: AppTheme.bodyStyle.copyWith(
-                color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.7),
+                color: AppTheme.getOnSurfaceColor(
+                  context,
+                ).withValues(alpha: 0.7),
                 fontSize: 12,
               ),
             ),
@@ -439,7 +457,10 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppTheme.darkBorderColor, width: 1),
+        border: Border.all(
+          color: AppTheme.getBorderColor(context, opacity: 0.72),
+          width: 1,
+        ),
         boxShadow: [AppTheme.getCardShadow()],
       ),
       child: Material(
@@ -475,7 +496,7 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                           gradient: LinearGradient(
                             colors: [
                               serviceColor.withValues(alpha: 0.25),
-                              AppTheme.darkElevatedSurfaceColor,
+                              AppTheme.getElevatedSurfaceColor(context),
                             ],
                           ),
                         ),
@@ -487,7 +508,7 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                             end: Alignment.bottomRight,
                             colors: [
                               serviceColor.withValues(alpha: 0.25),
-                              AppTheme.darkBackgroundColor,
+                              AppTheme.getBackgroundColor(context),
                             ],
                           ),
                         ),
@@ -514,14 +535,23 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                     top: 10,
                     right: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.55),
-                        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.pillRadius,
+                        ),
                       ),
                       child: Text(
                         '#${index + 1}',
-                        style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -530,14 +560,23 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                     top: 10,
                     left: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: serviceColor.withValues(alpha: 0.85),
-                        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                        borderRadius: BorderRadius.circular(
+                          AppTheme.pillRadius,
+                        ),
                       ),
                       child: Text(
                         creator.service.toUpperCase(),
-                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ),
@@ -570,7 +609,9 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                                 fit: BoxFit.cover,
                                 errorWidget: (_, url, error) => Center(
                                   child: Text(
-                                    creator.name.isNotEmpty ? creator.name[0].toUpperCase() : '?',
+                                    creator.name.isNotEmpty
+                                        ? creator.name[0].toUpperCase()
+                                        : '?',
                                     style: const TextStyle(
                                       color: AppTheme.primaryColor,
                                       fontWeight: FontWeight.w800,
@@ -610,7 +651,11 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right_rounded, color: Colors.white60, size: 20),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Colors.white60,
+                          size: 20,
+                        ),
                       ],
                     ),
                   ),
@@ -634,15 +679,17 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
   }
 
   String _buildCreatorBannerUrl(Creator creator, ApiSource source) {
-    final base =
-        source == ApiSource.coomer ? 'https://img.coomer.st' : 'https://img.kemono.cr';
+    final base = source == ApiSource.coomer
+        ? 'https://img.coomer.st'
+        : 'https://img.kemono.cr';
     return '$base/banners/${creator.service}/${creator.id}';
   }
 
   String _buildCreatorIconUrl(Creator creator, ApiSource source) {
     if (creator.avatar.isNotEmpty) return creator.avatar;
-    final base =
-        source == ApiSource.coomer ? 'https://img.coomer.st' : 'https://img.kemono.cr';
+    final base = source == ApiSource.coomer
+        ? 'https://img.coomer.st'
+        : 'https://img.kemono.cr';
     return '$base/icons/${creator.service}/${creator.id}';
   }
 
@@ -681,5 +728,4 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
         return AppTheme.primaryColor;
     }
   }
-
 }
