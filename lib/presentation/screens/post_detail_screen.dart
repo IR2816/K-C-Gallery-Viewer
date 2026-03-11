@@ -10,6 +10,11 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:html/parser.dart' as html_parser;
 
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+
+import '../../data/services/api_header_service.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/api_source.dart';
 import '../../domain/entities/comment.dart';
@@ -22,6 +27,7 @@ import '../theme/app_theme.dart';
 import 'fullscreen_media_viewer.dart';
 import 'creator_detail_screen.dart';
 import 'video_player_screen.dart';
+import '../widgets/skeleton_loader.dart';
 import '../widgets/comments_bottom_sheet.dart';
 import '../widgets/app_video_player.dart';
 
@@ -393,51 +399,11 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             ),
           ],
         ),
-        actions: [
-          if (_isSwitchingSource)
-            const Padding(
-              padding: EdgeInsets.only(right: 6),
-              child: Center(
-                child: SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppTheme.primaryColor,
-                  ),
-                ),
-              ),
-            ),
-          // We are moving Download and Share to the Bottom Action Bar,
-          // but we keep Refresh here if not from saved posts
-          if (!widget.isFromSavedPosts)
-            IconButton(
-              icon: _isRefreshingContent
-                  ? SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppTheme.getOnSurfaceColor(context),
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      Icons.refresh,
-                      color: AppTheme.getOnSurfaceColor(context),
-                    ),
-              onPressed: _isRefreshingContent ? null : _refreshContent,
-              tooltip: 'Refresh Post',
-            ),
-        ],
+        actions: [],
       ),
-      // Introducing Bottom Action Bar for modern UX
-      bottomNavigationBar: _buildBottomActionBar(),
+      // Removing Bottom Action Bar for social media inline layout
       body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.primaryColor),
-            )
+          ? const SingleChildScrollView(child: DetailScreenSkeleton())
           : _error != null
           ? Center(
               child: Column(
@@ -543,14 +509,14 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 10),
-                        _buildSourceControlCard(),
-                        _buildCreatorHeader(),
-                        _buildMediaSection(),
-                        _buildVideoSection(),
-                        _buildAudioSection(),
-                        _buildDownloadLinksSection(),
+                        _buildCreatorHeader(), // Updated: No margin/padding, clean row
+                        _buildMediaSection(), // Updated: Edge-to-edge
+                        _buildVideoSection(), // Updated: Edge-to-edge
+                        _buildSocialActionBar(), // NEW: Inline action bar
                         _buildPostContent(),
                         if (_currentPost.tags.isNotEmpty) _buildTagsSection(),
+                        _buildAudioSection(),
+                        _buildDownloadLinksSection(),
                         _buildCommentsSection(),
                         const SizedBox(height: 40),
                       ],
@@ -562,77 +528,51 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
-  // New modern bottom action bar
-  Widget _buildBottomActionBar() {
-    final cardBg = AppTheme.getElevatedSurfaceColorContext(context);
-    final borderColor = AppTheme.getBorderColor(context);
-
-    return Container(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.paddingOf(context).bottom + 12,
-        top: 12,
-        left: 16,
-        right: 16,
-      ),
-      decoration: BoxDecoration(
-        color: cardBg.withValues(alpha: 0.95),
-        border: Border(top: BorderSide(color: borderColor, width: 1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            offset: const Offset(0, -4),
-            blurRadius: 16,
-          ),
-        ],
-      ),
+  // New modern inline action bar mimicking Instagram/Twitter
+  Widget _buildSocialActionBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildBottomAction(
-            icon: _currentPost.saved ? Icons.bookmark : Icons.bookmark_border,
-            label: _currentPost.saved ? 'Saved' : 'Save',
-            color: _currentPost.saved
-                ? AppTheme.primaryColor
-                : AppTheme.getSecondaryTextColor(context),
+          // Like / Save
+          GestureDetector(
             onTap: _toggleSave,
+            child: Icon(
+              _currentPost.saved ? Icons.favorite : Icons.favorite_border,
+              color: _currentPost.saved
+                  ? Colors.red
+                  : AppTheme.getPrimaryTextColor(context),
+              size: 28,
+            ),
           ),
-          _buildBottomAction(
-            icon: Icons.share_rounded,
-            label: 'Share',
-            color: AppTheme.getSecondaryTextColor(context),
+          const SizedBox(width: 16),
+          // Share
+          GestureDetector(
             onTap: _sharePost,
+            child: Icon(
+              Icons.send_rounded, // or Icons.share_rounded
+              color: AppTheme.getPrimaryTextColor(context),
+              size: 26,
+            ),
           ),
-          _buildBottomAction(
-            icon: Icons.download_rounded,
-            label: 'Download All',
-            color: AppTheme.getSecondaryTextColor(context),
+          const SizedBox(width: 16),
+          // Download All
+          GestureDetector(
             onTap: _downloadAllFiles,
+            child: Icon(
+              Icons.download_rounded,
+              color: AppTheme.getPrimaryTextColor(context),
+              size: 28,
+            ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomAction({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+          const Spacer(),
+          // Source link
+          GestureDetector(
+            onTap: _launchSourceUrl,
+            child: Icon(
+              Icons.open_in_browser_rounded,
+              color: AppTheme.getPrimaryTextColor(context),
+              size: 28,
             ),
           ),
         ],
@@ -640,6 +580,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildSourceControlCard() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
@@ -760,164 +701,91 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   Widget _buildCreatorHeader() {
-    final mediaCount =
-        _currentPost.attachments.length + _currentPost.file.length;
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppTheme.getCardColor(context).withValues(alpha: 0.96),
-            AppTheme.getElevatedSurfaceColorContext(
-              context,
-            ).withValues(alpha: 0.92),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppTheme.getBorderColor(context).withValues(alpha: 0.9),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(
-              alpha: Theme.of(context).brightness == Brightness.dark
-                  ? 0.22
-                  : 0.08,
-            ),
-            blurRadius: 18,
-            spreadRadius: -10,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              // 🚀 NEW: Creator Avatar
-              GestureDetector(
-                onTap: _navigateToCreatorDetail,
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  margin: const EdgeInsets.only(right: 12),
-                  child: _buildCreatorAvatar(),
+          // Creator Avatar
+          GestureDetector(
+            onTap: _navigateToCreatorDetail,
+            child: Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppTheme.getBorderColor(
+                    context,
+                  ).withValues(alpha: 0.5),
+                  width: 1,
                 ),
               ),
-
-              // Creator Name (clickable)
-              Expanded(
-                child: GestureDetector(
-                  onTap: _navigateToCreatorDetail,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+              child: ClipOval(child: _buildCreatorAvatar()),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Creator Name & Info
+          Expanded(
+            child: GestureDetector(
+              onTap: _navigateToCreatorDetail,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Text(
-                        _currentPost.user,
-                        style: TextStyle(
-                          color: AppTheme.getPrimaryTextColor(context),
-                          fontSize: 16.5,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.2,
+                      Flexible(
+                        child: Text(
+                          _currentPost.user,
+                          style: TextStyle(
+                            color: AppTheme.getPrimaryTextColor(context),
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.2,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _getServiceColor().withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: _getServiceColor().withValues(
-                                  alpha: 0.35,
-                                ),
-                              ),
-                            ),
-                            child: Text(
-                              _getServiceDisplayName(),
-                              style: TextStyle(
-                                color: _getServiceColor(),
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            Icons.schedule_rounded,
-                            size: 12,
-                            color: AppTheme.getSecondaryTextColor(
-                              context,
-                              opacity: 0.9,
-                            ),
-                          ),
-                          const SizedBox(width: 3),
-                          Text(
-                            _formatDate(_currentPost.published.toString()),
-                            style: TextStyle(
-                              color: AppTheme.getSecondaryTextColor(
-                                context,
-                                opacity: 0.95,
-                              ),
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.verified,
+                        size: 14,
+                        color: AppTheme.primaryColor,
                       ),
                     ],
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (_currentPost.title.isNotEmpty)
-            Text(
-              _currentPost.title,
-              style: TextStyle(
-                color: AppTheme.getPrimaryTextColor(context),
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-                height: 1.3,
-                letterSpacing: -0.3,
+                  const SizedBox(height: 2),
+                  Text(
+                    '${_getServiceDisplayName()} • ${_formatDate(_currentPost.published.toString())}',
+                    style: TextStyle(
+                      color: AppTheme.getSecondaryTextColor(context),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildInfoChip(
-                icon: Icons.photo_library_rounded,
-                text: '$mediaCount media',
-              ),
-              _buildInfoChip(
-                icon: Icons.article_rounded,
-                text: _currentPost.content.trim().isEmpty
-                    ? 'No text'
-                    : 'Has text',
-              ),
-              _buildInfoChip(
-                icon: Icons.tag_rounded,
-                text: '${_currentPost.tags.length} tags',
-              ),
-            ],
+          ),
+          // More Options Placeholder
+          IconButton(
+            icon: Icon(
+              Icons.more_vert,
+              color: AppTheme.getPrimaryTextColor(context),
+            ),
+            onPressed: () {
+              // Placeholder for more actions like report, unfollow, copy link natively
+            },
+            visualDensity: VisualDensity.compact,
+            padding: EdgeInsets.zero,
           ),
         ],
       ),
     );
   }
 
+  // ignore: unused_element
   Widget _buildInfoChip({required IconData icon, required String text}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
@@ -967,24 +835,21 @@ class _PostDetailScreenState extends State<PostDetailScreen>
               ? mediaItems.take(maxPreviewItems).toList()
               : mediaItems);
 
-    return _buildSectionShell(
-      accentColor: AppTheme.primaryColor,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildMediaHeader(mediaItems.length),
-          const SizedBox(height: AppTheme.mdSpacing),
-          _buildMediaGrid(
-            displayItems,
-            imageFit: imageFit,
-            useThumbnails: useThumbnails,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _buildMediaGrid(
+          displayItems,
+          imageFit: imageFit,
+          useThumbnails: useThumbnails,
+        ),
+        if (hasManyItems) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: _buildExpandCollapseButton(mediaItems.length),
           ),
-          if (hasManyItems) ...[
-            const SizedBox(height: AppTheme.mdSpacing),
-            _buildExpandCollapseButton(mediaItems.length),
-          ],
         ],
-      ),
+      ],
     );
   }
 
@@ -1179,6 +1044,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     return thumbnailUrl;
   }
 
+  // ignore: unused_element
   Widget _buildMediaHeader(int totalItems) {
     return _buildSectionHeader(
       icon: Icons.photo_library_outlined,
@@ -1193,12 +1059,25 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     required BoxFit imageFit,
     required bool useThumbnails,
   }) {
+    // Responsive grid count based on screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount = 2;
+
+    // 🚀 FIX: if only 1 item, use full width so it's not asymmetrical
+    if (displayItems.length == 1) {
+      crossAxisCount = 1;
+    } else {
+      if (screenWidth > 600) crossAxisCount = 3;
+      if (screenWidth > 900) crossAxisCount = 4;
+    }
+
     return MasonryGridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
+      crossAxisCount: crossAxisCount,
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
+      padding: EdgeInsets.zero,
       itemCount: displayItems.length,
       itemBuilder: (context, index) {
         final mediaItem = displayItems[index];
@@ -1213,121 +1092,100 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
         return GestureDetector(
           onTap: () => _openMediaFullscreen(mediaItem, index),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-              ),
-              child: Stack(
-                children: [
-                  // ✅ CORRECT: FutureBuilder with actual image aspect ratio
-                  if (mediaType == 'image')
-                    FutureBuilder<Size>(
-                      future: getImageSize(displayUrl),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData) {
-                          return AspectRatio(
-                            aspectRatio: 1.0, // Placeholder ratio
+          child: Container(
+            color: Theme.of(context).colorScheme.surface,
+            child: Stack(
+              children: [
+                if (mediaType == 'image')
+                  CachedNetworkImage(
+                    imageUrl: displayUrl,
+                    httpHeaders: _getCoomerHeaders(displayUrl),
+                    fit: BoxFit.contain,
+                    memCacheWidth: MediaQuery.of(context).size.width ~/ 2,
+                    placeholder: (context, url) => AspectRatio(
+                      aspectRatio: 1.0,
+                      child: _buildImagePlaceholder(),
+                    ),
+                    errorWidget: (context, url, error) {
+                      if (displayUrl != rawUrl) {
+                        return CachedNetworkImage(
+                          imageUrl: rawUrl,
+                          httpHeaders: _getCoomerHeaders(rawUrl),
+                          fit: BoxFit.contain,
+                          memCacheWidth: MediaQuery.of(context).size.width ~/ 2,
+                          placeholder: (context, url) => AspectRatio(
+                            aspectRatio: 1.0,
                             child: _buildImagePlaceholder(),
-                          );
-                        }
-
-                        final imageSize = snapshot.data!;
-                        final aspectRatio = imageSize.width / imageSize.height;
-
-                        return AspectRatio(
-                          aspectRatio: aspectRatio,
-                          child: CachedNetworkImage(
-                            imageUrl: displayUrl,
-                            // 🚀 FIX: Add HTTP headers for Coomer CDN anti-hotlink protection
-                            httpHeaders: _getCoomerHeaders(displayUrl),
-                            fit: imageFit,
-                            memCacheWidth:
-                                MediaQuery.of(context).size.width ~/
-                                2, // Optimize memory
-                            placeholder: (context, url) =>
-                                _buildImagePlaceholder(),
-                            errorWidget: (context, url, error) {
-                              if (displayUrl != rawUrl) {
-                                return CachedNetworkImage(
-                                  imageUrl: rawUrl,
-                                  httpHeaders: _getCoomerHeaders(rawUrl),
-                                  fit: imageFit,
-                                  memCacheWidth:
-                                      MediaQuery.of(context).size.width ~/ 2,
-                                  placeholder: (context, url) =>
-                                      _buildImagePlaceholder(),
-                                  errorWidget: (context, url, error) =>
-                                      _buildImageError(),
-                                );
-                              }
-                              return _buildImageError();
-                            },
+                          ),
+                          errorWidget: (context, url, error) => AspectRatio(
+                            aspectRatio: 1.0,
+                            child: _buildImageError(),
                           ),
                         );
-                      },
-                    )
-                  else
-                    // For video, use fixed aspect ratio
-                    AspectRatio(
-                      aspectRatio: 16.0 / 9.0, // Standard video ratio
-                      child: _buildVideoThumbnail(mediaItem),
-                    ),
+                      }
+                      return AspectRatio(
+                        aspectRatio: 1.0,
+                        child: _buildImageError(),
+                      );
+                    },
+                  )
+                else
+                  // For video, use fixed aspect ratio
+                  AspectRatio(
+                    aspectRatio: 16.0 / 9.0, // Standard video ratio
+                    child: _buildVideoThumbnail(mediaItem),
+                  ),
 
-                  // Hover effect and overlay
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Theme.of(context).brightness == Brightness.dark
-                                ? Colors.black.withValues(alpha: 0.1)
-                                : Colors.black.withValues(alpha: 0.05),
-                          ],
-                        ),
+                // Hover effect and overlay
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Theme.of(context).brightness == Brightness.dark
+                              ? Colors.black.withValues(alpha: 0.1)
+                              : Colors.black.withValues(alpha: 0.05),
+                        ],
                       ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(8),
-                          onTap: () => _openMediaFullscreen(mediaItem, index),
-                          child: Stack(
-                            children: [
-                              // Center icon for interaction
-                              Center(
-                                child: Icon(
-                                  mediaType == 'video'
-                                      ? Icons.play_circle
-                                      : Icons.fullscreen,
-                                  color:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.white70
-                                      : Colors.black54,
-                                  size: 32,
-                                ),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => _openMediaFullscreen(mediaItem, index),
+                        child: Stack(
+                          children: [
+                            // Center icon for interaction
+                            Center(
+                              child: Icon(
+                                mediaType == 'video'
+                                    ? Icons.play_circle
+                                    : Icons.fullscreen,
+                                color:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white70
+                                    : Colors.black54,
+                                size: 32,
                               ),
-                              // Media type indicator
-                              Positioned(
-                                top: 8,
-                                left: 8,
-                                child: _buildMediaTypeIndicator(mediaType),
-                              ),
-                            ],
-                          ),
+                            ),
+                            // Media type indicator
+                            Positioned(
+                              top: 8,
+                              left: 8,
+                              child: _buildMediaTypeIndicator(mediaType),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
@@ -1340,7 +1198,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       color: Theme.of(context).brightness == Brightness.dark
           ? Colors.grey[800]
           : Colors.grey[300],
-      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      child: const AppSkeleton(shape: BoxShape.rectangle),
     );
   }
 
@@ -1512,7 +1370,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   /// Build download links section with clean architecture
-  /// Build Video Section with WebView integration
+  /// Build Video Section with edge-to-edge layout
   Widget _buildVideoSection() {
     _ensureMediaCache();
     final videoFiles = _cachedVideoItems;
@@ -1522,35 +1380,20 @@ class _PostDetailScreenState extends State<PostDetailScreen>
       return const SizedBox.shrink();
     }
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Video section header
-          _buildSectionHeader(
-            icon: Icons.videocam,
-            title: 'Videos (${videoFiles.length})',
-            color: Colors.red,
-            context: context,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: videoFiles.asMap().entries.map((entry) {
+        final index = entry.key;
+        final videoFile = entry.value;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 2),
+          child: _buildVideoPlayer(
+            videoFile,
+            index,
+            autoplayVideo: autoplayVideo,
           ),
-          const SizedBox(height: 16),
-
-          // Video list
-          ...videoFiles.asMap().entries.map((entry) {
-            final index = entry.key;
-            final videoFile = entry.value;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: _buildVideoPlayer(
-                videoFile,
-                index,
-                autoplayVideo: autoplayVideo,
-              ),
-            );
-          }),
-        ],
-      ),
+        );
+      }).toList(),
     );
   }
 
@@ -1561,194 +1404,20 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     required bool autoplayVideo,
   }) {
     final videoUrl = videoFile['url'] as String;
-    final fileName = videoFile['name'] as String;
-    final fileExtension = _getFileExtension(fileName);
     final shouldAutoPlay = autoplayVideo;
 
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Video player with WebView (lazy-load on tap)
-          Container(
-            height: 200,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: Colors.black,
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: (shouldAutoPlay || _activeVideoUrl == videoUrl)
-                  ? AppVideoPlayer(
-                      url: videoUrl,
-                      height: 200,
-                      autoplay: shouldAutoPlay || _activeVideoUrl == videoUrl,
-                      apiSource: _activeApiSource.name,
-                    )
-                  : _buildVideoPlaceholder(videoFile),
-            ),
-          ),
-
-          // Video info and controls
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                // Video icon with format indicator
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.red[700]!, Colors.red[500]!],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      const Icon(Icons.videocam, color: Colors.white, size: 24),
-                      // Format badge
-                      Positioned(
-                        top: 2,
-                        right: 2,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 2,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            fileExtension.toUpperCase(),
-                            style: TextStyle(
-                              color: Colors.red[700],
-                              fontSize: 6,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // Video info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // File name - Light Mode Support
-                      Text(
-                        fileName,
-                        style: TextStyle(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.grey.shade800,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      const SizedBox(height: 4),
-
-                      // Video quality indicator - Light Mode Support
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.red.withValues(alpha: 0.2)
-                              : Colors.red.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Video',
-                          style: TextStyle(
-                            color:
-                                Theme.of(context).brightness == Brightness.dark
-                                ? Colors.red
-                                : _getLightModeColor(Colors.red),
-                            fontSize: 10,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // Action buttons
-                Row(
-                  children: [
-                    // Fullscreen button
-                    GestureDetector(
-                      onTap: () => _openVideoFullscreen(videoFile),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.red.withValues(alpha: 0.5),
-                            width: 2,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.fullscreen,
-                          color: Colors.red,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    // Download button
-                    GestureDetector(
-                      onTap: () => _downloadSingleFile(videoFile),
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            width: 2,
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.download,
-                          color: Colors.white70,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      color: Colors.black,
+      height: 240,
+      width: double.infinity,
+      child: (shouldAutoPlay || _activeVideoUrl == videoUrl)
+          ? AppVideoPlayer(
+              url: videoUrl,
+              height: 240,
+              autoplay: shouldAutoPlay || _activeVideoUrl == videoUrl,
+              apiSource: _activeApiSource.name,
+            )
+          : _buildVideoPlaceholder(videoFile),
     );
   }
 
@@ -1774,12 +1443,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: Colors.black,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white70,
-                      strokeWidth: 2,
-                    ),
-                  ),
+                  child: const AppSkeleton(shape: BoxShape.rectangle),
                 ),
                 errorWidget: (context, url, error) => Container(
                   color: Colors.black,
@@ -1824,6 +1488,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   /// Open video in fullscreen
+  // ignore: unused_element
   void _openVideoFullscreen(Map<String, dynamic> videoFile) {
     Navigator.push(
       context,
@@ -1837,11 +1502,68 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     );
   }
 
-  /// Download single file
-  Future<void> _downloadSingleFile(Map<String, dynamic> file) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Download ${file['name']} - not implemented yet')),
-    );
+  /// Download single file to Downloads/KC Download
+  Future<void> _downloadSingleFile(PostLink link) async {
+    final url = link.url;
+    // Extract a reasonable filename from the URL or label
+    String fileName =
+        link.label ??
+        url
+            .split('/')
+            .lastWhere((e) => e.isNotEmpty, orElse: () => 'download_file');
+    if (fileName.contains('?')) {
+      fileName = fileName.split('?').first;
+    }
+    _showSnackBar('Starting download for $fileName...', Colors.blue);
+
+    try {
+      // Get the default Downloads directory
+      Directory? downloadsDirectory;
+      if (Platform.isAndroid) {
+        downloadsDirectory = Directory(
+          '/storage/emulated/0/Download/KC Download',
+        );
+      } else {
+        final dir = await getDownloadsDirectory();
+        if (dir != null) {
+          downloadsDirectory = Directory('${dir.path}/KC Download');
+        }
+      }
+
+      if (downloadsDirectory == null) {
+        _showSnackBar('Could not access Downloads directory', Colors.red);
+        return;
+      }
+
+      if (!await downloadsDirectory.exists()) {
+        await downloadsDirectory.create(recursive: true);
+      }
+
+      final savePath = '${downloadsDirectory.path}/$fileName';
+
+      // Use Dio to download
+      final dio = Dio();
+      final referer = _activeApiSource == ApiSource.coomer
+          ? 'https://coomer.st/'
+          : 'https://kemono.cr/';
+      final headers = ApiHeaderService.getMediaHeaders(referer: referer);
+
+      await dio.download(
+        url,
+        savePath,
+        options: Options(headers: headers),
+        onReceiveProgress: (received, total) {
+          if (total != -1) {
+            // We can log or update UI, but for now we'll just wait for complete
+          }
+        },
+      );
+
+      _showSnackBar('Saved to KC Download: $fileName', Colors.green);
+    } catch (e) {
+      AppLogger.warning('Download failed', tag: 'Downloader', error: e);
+      _showSnackBar('Download failed: $e', Colors.red);
+    }
   }
 
   /// Build Audio Section with proper state management
@@ -2795,6 +2517,26 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
               const SizedBox(width: 8),
 
+              // Download button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => _downloadSingleFile(link),
+                  icon: const Icon(Icons.download, size: 16),
+                  label: const Text('Save', style: TextStyle(fontSize: 12)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    minimumSize: const Size(0, 32),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
               // Open in browser button
               Expanded(
                 child: ElevatedButton.icon(
@@ -3146,107 +2888,77 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   /// Open link in browser
   Future<void> _openLinkInBrowser(String link) async {
     final uri = Uri.parse(link);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Could not open $link')));
+        }
+      }
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Could not open $link')));
+        ).showSnackBar(SnackBar(content: Text('Error opening link: $e')));
       }
+    }
+  }
+
+  Future<void> _launchSourceUrl() async {
+    final baseUrl = _activeApiSource == ApiSource.coomer
+        ? 'https://coomer.st'
+        : 'https://kemono.cr';
+    final url =
+        '$baseUrl/${widget.post.service}/user/${widget.post.user}/post/${widget.post.id}';
+
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Could not open link')));
+        }
+      }
+    } catch (e) {
+      AppLogger.warning(
+        'Failed to launch full post URL',
+        tag: 'PostDetail',
+        error: e,
+      );
     }
   }
 
   Widget _buildPostContent() {
     final cleanContent = _cleanHtmlContent(_currentPost.content);
 
-    // 🚨 IMPORTANT: Jangan render Content section kalau kosong
-    if (cleanContent.isEmpty) {
-      return _buildSectionShell(
-        accentColor: Colors.indigo,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSectionHeader(
-              icon: Icons.article,
-              title: 'Content',
-              color: Colors.indigo,
-              context: context,
-            ),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.grey.withValues(alpha: 0.1)
-                    : Colors.grey.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.grey.withValues(alpha: 0.3)
-                      : Colors.grey.withValues(alpha: 0.2),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? Colors.grey
-                        : Colors.grey.shade600,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'This post does not contain textual content.',
-                      style: TextStyle(
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.grey
-                            : Colors.grey.shade600,
-                        fontSize: 14,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+    if (cleanContent.isEmpty && _currentPost.title.isEmpty) {
+      return const SizedBox.shrink();
     }
 
-    // Normal content rendering
-    return _buildSectionShell(
-      accentColor: Colors.indigo,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(
-            icon: Icons.article,
-            title: 'Content',
-            color: Colors.indigo,
-            context: context,
-          ),
-          const SizedBox(height: 16),
-
-          // Content text with Linkify
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.indigo.withValues(alpha: 0.05)
-                  : Colors.indigo.withValues(alpha: 0.02), // Light mode
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.indigo.withValues(alpha: 0.2)
-                    : Colors.indigo.withValues(alpha: 0.1), // Light mode
+          if (_currentPost.title.isNotEmpty) ...[
+            Text(
+              _currentPost.title,
+              style: TextStyle(
+                color: AppTheme.getPrimaryTextColor(context),
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -0.2,
               ),
             ),
-            child: _buildLinkifiedContent(),
-          ),
+            if (cleanContent.isNotEmpty) const SizedBox(height: 6),
+          ],
+          if (cleanContent.isNotEmpty) _buildLinkifiedContent(),
         ],
       ),
     );
@@ -3425,19 +3137,17 @@ class _PostDetailScreenState extends State<PostDetailScreen>
                           : Colors.blue.withValues(alpha: 0.2), // Light mode
                     ),
                   ),
-                  child: const Center(
+                  child: Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        CircularProgressIndicator(
-                          color: Colors.blue,
-                          strokeWidth: 2,
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: AppSkeleton.circle(size: 24),
                         ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Loading comments...',
-                          style: TextStyle(color: Colors.blue, fontSize: 12),
-                        ),
+                        const SizedBox(height: 8),
+                        AppSkeleton.rounded(height: 12, width: 120),
                       ],
                     ),
                   ),
@@ -3732,6 +3442,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
     }
   }
 
+  // ignore: unused_element
   Color _getServiceColor() {
     switch (_currentPost.service) {
       case 'onlyfans':
@@ -3811,11 +3522,90 @@ class _PostDetailScreenState extends State<PostDetailScreen>
   }
 
   Future<void> _downloadAllFiles() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Download functionality not implemented yet'),
-      ),
+    final links = collectAllLinks();
+    if (links.isEmpty) {
+      _showSnackBar('No files found to download.', Colors.orange);
+      return;
+    }
+
+    _showSnackBar(
+      'Starting batch download for ${links.length} files...',
+      Colors.blue,
     );
+
+    int successCount = 0;
+    int failCount = 0;
+
+    try {
+      Directory? downloadsDirectory;
+      if (Platform.isAndroid) {
+        downloadsDirectory = Directory(
+          '/storage/emulated/0/Download/KC Download',
+        );
+      } else {
+        final dir = await getDownloadsDirectory();
+        if (dir != null) {
+          downloadsDirectory = Directory('${dir.path}/KC Download');
+        }
+      }
+
+      if (downloadsDirectory == null) {
+        _showSnackBar('Could not access Downloads directory', Colors.red);
+        return;
+      }
+
+      if (!await downloadsDirectory.exists()) {
+        await downloadsDirectory.create(recursive: true);
+      }
+
+      final dio = Dio();
+      final referer = _activeApiSource == ApiSource.coomer
+          ? 'https://coomer.st/'
+          : 'https://kemono.cr/';
+      final headers = ApiHeaderService.getMediaHeaders(referer: referer);
+
+      for (final link in links) {
+        try {
+          final url = link.url;
+          String fileName =
+              link.label ??
+              url
+                  .split('/')
+                  .lastWhere(
+                    (e) => e.isNotEmpty,
+                    orElse: () => 'download_file',
+                  );
+          if (fileName.contains('?')) {
+            fileName = fileName.split('?').first;
+          }
+          final savePath = '${downloadsDirectory.path}/$fileName';
+
+          await dio.download(url, savePath, options: Options(headers: headers));
+          successCount++;
+        } catch (e) {
+          failCount++;
+          AppLogger.warning(
+            'Failed batch download for ${link.url}',
+            tag: 'Downloader',
+            error: e,
+          );
+        }
+      }
+
+      if (failCount > 0) {
+        _showSnackBar(
+          'Downloaded $successCount files ($failCount failed)',
+          Colors.orange,
+        );
+      } else {
+        _showSnackBar(
+          'Successfully downloaded all $successCount files to KC Download!',
+          Colors.green,
+        );
+      }
+    } catch (e) {
+      _showSnackBar('Batch download failed: $e', Colors.red);
+    }
   }
 
   Future<void> _sharePost() async {

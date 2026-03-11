@@ -32,6 +32,7 @@ class PostCard extends StatelessWidget {
   final VoidCallback? onSave;
   final ApiSource apiSource;
   final VoidCallback? onCreatorTap;
+  final bool isSingleColumn;
 
   const PostCard({
     super.key,
@@ -40,6 +41,7 @@ class PostCard extends StatelessWidget {
     this.onSave,
     required this.apiSource,
     this.onCreatorTap,
+    this.isSingleColumn = false,
   });
 
   @override
@@ -50,15 +52,15 @@ class PostCard extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(AppTheme.mdRadius),
-        border: Border.all(color: borderColor, width: 1),
-        boxShadow: [AppTheme.getCardShadow()],
+        color: isSingleColumn ? Colors.transparent : cardBg,
+        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(AppTheme.mdRadius),
+        border: isSingleColumn ? null : Border.all(color: borderColor, width: 1),
+        boxShadow: isSingleColumn ? null : [AppTheme.getCardShadow()],
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppTheme.mdRadius),
+        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(AppTheme.mdRadius),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -127,19 +129,19 @@ class PostCard extends StatelessWidget {
                 children: [
                   Text(
                     _getCreatorDisplayName(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.darkPrimaryTextColor,
+                      color: AppTheme.getPrimaryTextColor(context),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     _formatDate(post.published),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
-                      color: AppTheme.darkSecondaryTextColor,
+                      color: AppTheme.getSecondaryTextColor(context),
                     ),
                   ),
                 ],
@@ -176,8 +178,11 @@ class PostCard extends StatelessWidget {
         final quality = settings.imageQuality;
         final thumbnailUrl = post.getBestThumbnailUrl(apiSource, quality: quality);
         
+        // Use 1.25 (4:5 vertical) for single column social feed, 1.5 (3:2) for grid
+        final aspectRatio = isSingleColumn ? 1.0 : 1.5; 
+        
         return AspectRatio(
-          aspectRatio: 1.5, // Standard 3:2 aspect ratio for feed
+          aspectRatio: aspectRatio,
           child: Stack(
             fit: StackFit.expand,
             children: [
@@ -190,9 +195,9 @@ class PostCard extends StatelessWidget {
                       apiSource: apiSource.name,
                       quality: quality,
                       allowFallback: quality != 'low', // Disable fallback in Low Quality / Data Saver
-                      errorWidget: _buildImagePlaceholder(),
+                      errorWidget: _buildImagePlaceholder(context),
                     )
-                  : _buildImagePlaceholder(),
+                  : _buildImagePlaceholder(context),
 
               // Gradient overlay bottom
               Positioned.fill(
@@ -240,11 +245,11 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildImagePlaceholder() {
+  Widget _buildImagePlaceholder(BuildContext context) {
     return Container(
-      color: AppTheme.darkElevatedSurfaceColor,
-      child: const Center(
-        child: Icon(Icons.image_not_supported_outlined, color: AppTheme.darkSecondaryTextColor, size: 40),
+      color: AppTheme.getElevatedSurfaceColorContext(context),
+      child: Center(
+        child: Icon(Icons.image_not_supported_outlined, color: AppTheme.getSecondaryTextColor(context), size: 40),
       ),
     );
   }
@@ -286,7 +291,7 @@ class PostCard extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 16),
+      padding: EdgeInsets.fromLTRB(isSingleColumn ? 16 : 14, 12, isSingleColumn ? 16 : 14, isSingleColumn ? 20 : 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -302,7 +307,7 @@ class PostCard extends StatelessWidget {
                     child: Icon(
                       post.saved ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
                       key: ValueKey(post.saved),
-                      color: post.saved ? AppTheme.primaryColor : AppTheme.darkSecondaryTextColor,
+                      color: post.saved ? AppTheme.primaryColor : AppTheme.getSecondaryTextColor(context),
                       size: 22,
                     ),
                   ),
@@ -339,10 +344,10 @@ class PostCard extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               post.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: AppTheme.darkPrimaryTextColor,
+                color: AppTheme.getPrimaryTextColor(context),
                 height: 1.4,
               ),
               maxLines: 2,

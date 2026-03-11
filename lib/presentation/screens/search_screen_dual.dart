@@ -31,6 +31,7 @@ import 'discord_channel_list_screen.dart';
 
 // Widgets
 import '../widgets/popular_creators_section.dart';
+import '../widgets/skeleton_loader.dart';
 
 // Utils
 import '../../utils/logger.dart';
@@ -582,11 +583,12 @@ class _SearchScreenDualState extends State<SearchScreenDual>
             children: [
               if (isPreparing)
                 const SizedBox(
-                  width: 12,
-                  height: 12,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  width: 14,
+                  height: 14,
+                  child: AppSkeleton(
+                    width: 14,
+                    height: 14,
+                    shape: BoxShape.circle,
                   ),
                 )
               else
@@ -940,8 +942,10 @@ class _SearchScreenDualState extends State<SearchScreenDual>
   ) {
     // Show loading state
     if (provider.loading) {
-      return Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryColor),
+      return ListView.builder(
+        padding: const EdgeInsets.all(AppTheme.mdPadding),
+        itemCount: 4,
+        itemBuilder: (context, index) => const PopularCreatorSkeleton(),
       );
     }
 
@@ -1031,8 +1035,10 @@ class _SearchScreenDualState extends State<SearchScreenDual>
     CreatorsProvider provider,
   ) {
     if (provider.isLoading) {
-      return Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryColor),
+      return ListView.builder(
+        padding: const EdgeInsets.all(AppTheme.mdPadding),
+        itemCount: 4,
+        itemBuilder: (context, index) => const PopularCreatorSkeleton(),
       );
     }
 

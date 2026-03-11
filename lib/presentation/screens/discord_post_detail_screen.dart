@@ -17,6 +17,7 @@ import '../../utils/logger.dart';
 import 'fullscreen_media_viewer.dart';
 import 'video_player_screen.dart';
 import '../widgets/app_video_player.dart';
+import '../widgets/skeleton_loader.dart';
 
 /// Screen untuk menampilkan detail post Discord
 /// Discord posts sudah lengkap dari channel API, tidak perlu load additional data
@@ -681,54 +682,19 @@ class _DiscordPostDetailScreenState extends State<DiscordPostDetailScreen> {
       ),
     );
   }
-
-  Widget _buildVideoPlaceholder(
-    String videoUrl,
-    String? thumbnailUrl,
-    double height,
-  ) {
-    return Material(
-      color: Colors.black,
-      child: InkWell(
-        onTap: () {
-          if (!mounted) return;
-          setState(() {
-            _activeVideoUrl = videoUrl;
-          });
-        },
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (thumbnailUrl != null && thumbnailUrl.isNotEmpty)
-              CachedNetworkImage(
-                imageUrl: thumbnailUrl,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Colors.black,
-                  child: const Center(
-                    child: CircularProgressIndicator(
-                      color: Colors.white70,
-                      strokeWidth: 2,
-                    ),
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.black,
-                  child: const Center(
-                    child: Icon(Icons.videocam, color: Colors.white70, size: 40),
                   ),
                 ),
               )
             else
-              Container(
-                color: Colors.black,
-                child: const Center(
+              void Container(
+                color = Colors.black,
+                child = const Center(
                   child: Icon(Icons.videocam, color: Colors.white70, size: 40),
                 ),
               ),
-            Container(color: Colors.black.withValues(alpha: 0.35)),
-            Center(
-              child: Column(
+            void Container(color = Colors.black.withValues(alpha: 0.35)),
+            void Center(
+              child = Column(
                 mainAxisSize: MainAxisSize.min,
                 children: const [
                   Icon(Icons.play_circle_fill, color: Colors.white, size: 48),
@@ -823,12 +789,7 @@ class _DiscordPostDetailScreenState extends State<DiscordPostDetailScreen> {
       memCacheHeight: memCacheHeight,
       placeholder: (context, url) => Container(
         color: Colors.grey[900],
-        child: const Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
-          ),
-        ),
+        child: const AppSkeleton(shape: BoxShape.rectangle),
       ),
       errorWidget: (context, url, error) {
         if (displayUrl != rawUrl && rawUrl.isNotEmpty) {
@@ -839,12 +800,7 @@ class _DiscordPostDetailScreenState extends State<DiscordPostDetailScreen> {
             memCacheHeight: memCacheHeight,
             placeholder: (context, url) => Container(
               color: Colors.grey[900],
-              child: const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
-                ),
-              ),
+              child: const AppSkeleton(shape: BoxShape.rectangle),
             ),
             errorWidget: (context, url, error) => Container(
               color: Colors.grey[900],

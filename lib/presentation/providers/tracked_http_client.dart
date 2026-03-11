@@ -94,6 +94,66 @@ class TrackedHttpClient extends http.BaseClient {
   }
 }
 
+/// HTTP Client with Automatic Retries
+class RetryHttpClient extends http.BaseClient {
+  final http.Client _inner;
+  final int maxRetries;
+  final Duration timeout;
+
+  RetryHttpClient(
+    this._inner, {
+    this.maxRetries = 3,
+    this.timeout = const Duration(seconds: 15),
+  });
+
+  Future<http.BaseRequest> _copyRequest(http.BaseRequest request) async {
+    if (request is http.Request) {
+      final copy = http.Request(request.method, request.url)
+        ..headers.addAll(request.headers)
+        ..encoding = request.encoding
+        ..followRedirects = request.followRedirects
+        ..maxRedirects = request.maxRedirects
+        ..bodyBytes = request.bodyBytes;
+      return copy;
+    } else if (request is http.MultipartRequest) {
+      final copy = http.MultipartRequest(request.method, request.url)
+        ..headers.addAll(request.headers)
+        ..fields.addAll(request.fields)
+        ..files.addAll(request.files);
+      return copy;
+    }
+    return request;
+  }
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    int attempts = 0;
+    while (true) {
+      attempts++;
+      try {
+        final requestCopy = await _copyRequest(request);
+        final response = await _inner.send(requestCopy).timeout(timeout);
+
+        if (response.statusCode >= 500 && attempts <= maxRetries) {
+          debugPrint(
+              '⚠️ HTTP ${response.statusCode}: Retrying request (Attempt $attempts/$maxRetries) for ${request.url}');
+          await Future.delayed(Duration(seconds: 1 << attempts));
+          continue;
+        }
+        return response;
+      } catch (e) {
+        if (attempts <= maxRetries) {
+          debugPrint(
+              '⚠️ Network Error: Retrying request (Attempt $attempts/$maxRetries) for ${request.url} -> $e');
+          await Future.delayed(Duration(seconds: 1 << attempts));
+          continue;
+        }
+        rethrow;
+      }
+    }
+  }
+}
+
 /// HTTP Client Factory for creating tracked clients
 class TrackedHttpClientFactory {
   static DataUsageTracker? _tracker;
@@ -111,16 +171,16 @@ class TrackedHttpClientFactory {
       debugPrint(
         '⚠️ DataUsageTracker not initialized. Using regular HTTP client.',
       );
-      return http.Client();
+      return RetryHttpClient(http.Client());
     }
 
-    _cachedClient ??= TrackedHttpClient(http.Client(), _tracker!);
+    _cachedClient ??= TrackedHttpClient(RetryHttpClient(http.Client()), _tracker!);
     return _cachedClient!;
   }
 
   /// Create a new tracked client instance
   static TrackedHttpClient createTrackedClient(DataUsageTracker tracker) {
-    return TrackedHttpClient(http.Client(), tracker);
+    return TrackedHttpClient(RetryHttpClient(http.Client()), tracker);
   }
 }
 

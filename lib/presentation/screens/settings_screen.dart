@@ -102,7 +102,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
-                color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.75),
+                color: AppTheme.getSecondaryTextColor(
+                  context,
+                ).withValues(alpha: 0.75),
               ),
             ),
           ],
@@ -205,7 +207,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w800,
-              color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.8),
+              color: AppTheme.getSecondaryTextColor(
+                context,
+              ).withValues(alpha: 0.8),
               letterSpacing: 1.2,
             ),
           ),
@@ -218,23 +222,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: AppTheme.darkCardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: AppTheme.getBorderColor(context).withValues(
+            alpha: Theme.of(context).brightness == Brightness.dark ? 0.05 : 0.4,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.1
+                  : 0.05,
+            ),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: child,
-      ),
+      child: ClipRRect(borderRadius: BorderRadius.circular(20), child: child),
     );
   }
 
@@ -243,14 +250,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.darkCardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.05),
+          color: AppTheme.getBorderColor(context).withValues(
+            alpha: Theme.of(context).brightness == Brightness.dark ? 0.05 : 0.4,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.2
+                  : 0.08,
+            ),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -285,18 +298,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'K/C Viewer',
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 22,
-                    color: Colors.white,
+                    color: AppTheme.getPrimaryTextColor(context),
                     letterSpacing: -0.5,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -331,8 +347,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               // Theme Selection
               ListTile(
-                leading: const Icon(Icons.palette_rounded, size: 20, color: Colors.indigoAccent),
-                title: const Text('Theme', style: TextStyle(fontWeight: FontWeight.w600)),
+                leading: const Icon(
+                  Icons.palette_rounded,
+                  size: 20,
+                  color: Colors.indigoAccent,
+                ),
+                title: const Text(
+                  'Theme',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: Text(_getThemeDisplayName(themeProvider.themeMode)),
                 trailing: DropdownButton<ThemeMode>(
                   value: themeProvider.themeMode,
@@ -344,9 +367,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   underline: const SizedBox(),
                   icon: const Icon(Icons.keyboard_arrow_down_rounded),
                   items: const [
-                    DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
-                    DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
-                    DropdownMenuItem(value: ThemeMode.system, child: Text('System')),
+                    DropdownMenuItem(
+                      value: ThemeMode.light,
+                      child: Text('Light'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.dark,
+                      child: Text('Dark'),
+                    ),
+                    DropdownMenuItem(
+                      value: ThemeMode.system,
+                      child: Text('System'),
+                    ),
                   ],
                 ),
               ),
@@ -355,9 +387,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Text Size
               ListTile(
-                leading: const Icon(Icons.format_size_rounded, size: 20, color: Colors.amber),
-                title: const Text('Text Size', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(_getTextSizeDisplayName(themeProvider.textScale)),
+                leading: const Icon(
+                  Icons.format_size_rounded,
+                  size: 20,
+                  color: Colors.amber,
+                ),
+                title: const Text(
+                  'Text Size',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _getTextSizeDisplayName(themeProvider.textScale),
+                ),
                 trailing: DropdownButton<double>(
                   value: themeProvider.textScale,
                   onChanged: (double? newTextScale) {
@@ -390,9 +431,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               // Blocked Tags
               ListTile(
-                leading: const Icon(Icons.tag_rounded, size: 20, color: Colors.blueAccent),
-                title: const Text('Blocked Tags', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${tagFilterProvider.blacklist.length} tags currently blocked'),
+                leading: const Icon(
+                  Icons.tag_rounded,
+                  size: 20,
+                  color: Colors.blueAccent,
+                ),
+                title: const Text(
+                  'Blocked Tags',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${tagFilterProvider.blacklist.length} tags currently blocked',
+                ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                 onTap: () => _showBlockedTagsScreen(),
               ),
@@ -401,8 +451,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Hide NSFW
               SwitchListTile(
-                secondary: const Icon(Icons.explicit_rounded, size: 20, color: Colors.redAccent),
-                title: const Text('Hide NSFW Content', style: TextStyle(fontWeight: FontWeight.w600)),
+                secondary: const Icon(
+                  Icons.explicit_rounded,
+                  size: 20,
+                  color: Colors.redAccent,
+                ),
+                title: const Text(
+                  'Hide NSFW Content',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: const Text('Safely browse in public'),
                 activeThumbColor: AppTheme.primaryColor,
                 value: settingsProvider.hideNsfw,
@@ -413,9 +470,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Services Filter
               ListTile(
-                leading: const Icon(Icons.hub_rounded, size: 20, color: Colors.teal),
-                title: const Text('Preferred Source', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(_getServiceDisplayName(settingsProvider.defaultApiSource)),
+                leading: const Icon(
+                  Icons.hub_rounded,
+                  size: 20,
+                  color: Colors.teal,
+                ),
+                title: const Text(
+                  'Preferred Source',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _getServiceDisplayName(settingsProvider.defaultApiSource),
+                ),
                 trailing: DropdownButton<ApiSource>(
                   value: settingsProvider.defaultApiSource,
                   onChanged: (ApiSource? newSource) {
@@ -448,9 +514,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Column(
             children: [
               ListTile(
-                leading: const Icon(Icons.grid_view_rounded, size: 20, color: Colors.orangeAccent),
-                title: const Text('Latest Card Style', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(_getPostCardStyleDisplayName(settingsProvider.latestPostCardStyle)),
+                leading: const Icon(
+                  Icons.grid_view_rounded,
+                  size: 20,
+                  color: Colors.orangeAccent,
+                ),
+                title: const Text(
+                  'Latest Card Style',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _getPostCardStyleDisplayName(
+                    settingsProvider.latestPostCardStyle,
+                  ),
+                ),
                 trailing: DropdownButton<String>(
                   value: settingsProvider.latestPostCardStyle,
                   onChanged: (String? newStyle) {
@@ -468,9 +545,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const Divider(height: 1, indent: 56),
               ListTile(
-                leading: const Icon(Icons.view_column_rounded, size: 20, color: Colors.cyanAccent),
-                title: const Text('Layout Columns', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${settingsProvider.latestPostsColumns} columns'),
+                leading: const Icon(
+                  Icons.view_column_rounded,
+                  size: 20,
+                  color: Colors.cyanAccent,
+                ),
+                title: const Text(
+                  'Layout Columns',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${settingsProvider.latestPostsColumns} columns',
+                ),
                 trailing: DropdownButton<int>(
                   value: settingsProvider.latestPostsColumns,
                   onChanged: (int? newValue) {
@@ -503,33 +589,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               // Autoplay Video
               SwitchListTile(
-                secondary: const Icon(Icons.slow_motion_video_rounded, size: 20, color: Colors.purpleAccent),
-                title: const Text('Autoplay Videos', style: TextStyle(fontWeight: FontWeight.w600)),
+                secondary: const Icon(
+                  Icons.slow_motion_video_rounded,
+                  size: 20,
+                  color: Colors.purpleAccent,
+                ),
+                title: const Text(
+                  'Autoplay Videos',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: const Text('Play automatically in feed'),
                 activeThumbColor: AppTheme.primaryColor,
                 value: settingsProvider.autoplayVideo,
-                onChanged: (bool value) => settingsProvider.setAutoplayVideo(value),
+                onChanged: (bool value) =>
+                    settingsProvider.setAutoplayVideo(value),
               ),
 
               const Divider(height: 1, indent: 56),
 
               // Use Thumbnails
               SwitchListTile(
-                secondary: const Icon(Icons.image_aspect_ratio_rounded, size: 20, color: Colors.greenAccent),
-                title: const Text('Optimize Images', style: TextStyle(fontWeight: FontWeight.w600)),
+                secondary: const Icon(
+                  Icons.image_aspect_ratio_rounded,
+                  size: 20,
+                  color: Colors.greenAccent,
+                ),
+                title: const Text(
+                  'Optimize Images',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: const Text('Use thumbnails to save data'),
                 activeThumbColor: AppTheme.primaryColor,
                 value: settingsProvider.loadThumbnails,
-                onChanged: (bool value) => settingsProvider.setLoadThumbnails(value),
+                onChanged: (bool value) =>
+                    settingsProvider.setLoadThumbnails(value),
               ),
 
               const Divider(height: 1, indent: 56),
 
               // Image Fit Mode
               ListTile(
-                leading: const Icon(Icons.aspect_ratio_rounded, size: 20, color: Colors.blueAccent),
-                title: const Text('Image Fit Mode', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text(_getImageFitDisplayName(settingsProvider.imageFitMode)),
+                leading: const Icon(
+                  Icons.aspect_ratio_rounded,
+                  size: 20,
+                  color: Colors.blueAccent,
+                ),
+                title: const Text(
+                  'Image Fit Mode',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  _getImageFitDisplayName(settingsProvider.imageFitMode),
+                ),
                 trailing: DropdownButton<BoxFit>(
                   value: settingsProvider.imageFitMode,
                   onChanged: (BoxFit? newFit) {
@@ -562,19 +673,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               // Download Method
               ListTile(
-                leading: const Icon(Icons.rocket_launch_rounded, color: Colors.blueAccent, size: 20),
-                title: const Text('Download Engine', style: TextStyle(fontWeight: FontWeight.w600)),
+                leading: const Icon(
+                  Icons.rocket_launch_rounded,
+                  color: Colors.blueAccent,
+                  size: 20,
+                ),
+                title: const Text(
+                  'Download Engine',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: const Text('High-speed secure fetching'),
                 trailing: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+                    border: Border.all(
+                      color: Colors.green.withValues(alpha: 0.2),
+                    ),
                   ),
                   child: const Text(
                     'OPTIMIZED',
-                    style: TextStyle(color: Colors.green, fontSize: 9, fontWeight: FontWeight.w800),
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 onTap: () => _showDownloadMethodInfo(context),
@@ -584,8 +711,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Browser Info
               ListTile(
-                leading: const Icon(Icons.open_in_new_rounded, color: Colors.blue, size: 20),
-                title: const Text('External Handlers', style: TextStyle(fontWeight: FontWeight.w600)),
+                leading: const Icon(
+                  Icons.open_in_new_rounded,
+                  color: Colors.blue,
+                  size: 20,
+                ),
+                title: const Text(
+                  'External Handlers',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: const Text('Chrome Tabs / Safari Support'),
                 trailing: const Icon(Icons.info_outline_rounded, size: 18),
                 onTap: () => _showBrowserInfo(context),
@@ -815,9 +949,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               // Data Usage Monitor
               ListTile(
-                leading: const Icon(Icons.analytics_rounded, size: 20, color: Colors.blueAccent),
-                title: const Text('Data Usage Dashboard', style: TextStyle(fontWeight: FontWeight.w600)),
-                subtitle: Text('${dataUsageTracker.getUsageInMB(dataUsageTracker.sessionUsage).toStringAsFixed(2)} MB in current session'),
+                leading: const Icon(
+                  Icons.analytics_rounded,
+                  size: 20,
+                  color: Colors.blueAccent,
+                ),
+                title: const Text(
+                  'Data Usage Dashboard',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  '${dataUsageTracker.getUsageInMB(dataUsageTracker.sessionUsage).toStringAsFixed(2)} MB in current session',
+                ),
                 trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
                 onTap: () {
                   Navigator.push(
@@ -833,8 +976,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               // Cache Size Info
               ListTile(
-                leading: const Icon(Icons.cleaning_services_rounded, size: 20, color: Colors.amber),
-                title: const Text('Disk Cache', style: TextStyle(fontWeight: FontWeight.w600)),
+                leading: const Icon(
+                  Icons.cleaning_services_rounded,
+                  size: 20,
+                  color: Colors.amber,
+                ),
+                title: const Text(
+                  'Disk Cache',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 subtitle: FutureBuilder<String>(
                   future: _cacheSizeFuture,
                   builder: (context, snapshot) {
@@ -848,7 +998,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: () => _clearCache(),
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.redAccent,
-                    textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
                   ),
                   child: const Text('CLEAR'),
                 ),
@@ -867,8 +1020,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           // Version
           const ListTile(
-            leading: Icon(Icons.verified_rounded, size: 20, color: Colors.greenAccent),
-            title: Text('Build Version', style: TextStyle(fontWeight: FontWeight.w600)),
+            leading: Icon(
+              Icons.verified_rounded,
+              size: 20,
+              color: Colors.greenAccent,
+            ),
+            title: Text(
+              'Build Version',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             subtitle: Text('1.0.3-premium'),
           ),
 
@@ -876,8 +1036,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Data Source
           const ListTile(
-            leading: Icon(Icons.cloud_sync_rounded, size: 20, color: Colors.blueAccent),
-            title: Text('Data Sources', style: TextStyle(fontWeight: FontWeight.w600)),
+            leading: Icon(
+              Icons.cloud_sync_rounded,
+              size: 20,
+              color: Colors.blueAccent,
+            ),
+            title: Text(
+              'Data Sources',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             subtitle: Text('Kemono & Coomer Decentralized API'),
           ),
 
@@ -885,8 +1052,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Credits: Official API
           ListTile(
-            leading: const Icon(Icons.auto_stories_rounded, size: 20, color: Colors.orangeAccent),
-            title: const Text('API Documentation', style: TextStyle(fontWeight: FontWeight.w600)),
+            leading: const Icon(
+              Icons.auto_stories_rounded,
+              size: 20,
+              color: Colors.orangeAccent,
+            ),
+            title: const Text(
+              'API Documentation',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             subtitle: const Text('kemono.cr/documentation'),
             trailing: const Icon(Icons.open_in_new_rounded, size: 14),
             onTap: () => _openLink('https://kemono.cr/documentation/api'),
@@ -896,8 +1070,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Credits: Search by Name API
           ListTile(
-            leading: const Icon(Icons.code_rounded, size: 20, color: Colors.cyanAccent),
-            title: const Text('Core Engine', style: TextStyle(fontWeight: FontWeight.w600)),
+            leading: const Icon(
+              Icons.code_rounded,
+              size: 20,
+              color: Colors.cyanAccent,
+            ),
+            title: const Text(
+              'Core Engine',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             subtitle: const Text('Powered by mbahArip API'),
             trailing: const Icon(Icons.open_in_new_rounded, size: 14),
             onTap: () => _openLink('https://github.com/mbahArip/kemono-api'),
@@ -907,8 +1088,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Disclaimer
           const ListTile(
-            leading: Icon(Icons.gavel_rounded, size: 20, color: Colors.blueGrey),
-            title: Text('Legal Disclaimer', style: TextStyle(fontWeight: FontWeight.w600)),
+            leading: Icon(
+              Icons.gavel_rounded,
+              size: 20,
+              color: Colors.blueGrey,
+            ),
+            title: Text(
+              'Legal Disclaimer',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
             subtitle: Text('Educational viewer & proxy gateway'),
           ),
         ],

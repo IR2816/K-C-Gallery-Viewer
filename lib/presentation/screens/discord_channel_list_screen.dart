@@ -341,7 +341,7 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCardColor : AppTheme.lightCardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: _searchQuery.isNotEmpty 
@@ -428,7 +428,7 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: isDark ? AppTheme.darkCardColor : AppTheme.lightCardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: Theme.of(context).dividerColor.withValues(alpha: 0.08),
@@ -483,8 +483,8 @@ class _DiscordChannelListScreenState extends State<DiscordChannelListScreen>
                         channel.name,
                         style: TextStyle(
                           color: isDisabled
-                              ? Colors.white.withValues(alpha: 0.4)
-                              : Colors.white,
+                              ? AppTheme.getPrimaryTextColor(context).withValues(alpha: 0.4)
+                              : AppTheme.getPrimaryTextColor(context),
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
                           letterSpacing: -0.2,

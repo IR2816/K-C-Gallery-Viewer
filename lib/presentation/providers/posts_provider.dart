@@ -206,12 +206,6 @@ class PostsProvider with ChangeNotifier {
       if (newPosts.isEmpty) {
         _hasMore = false;
       } else {
-        // Limit posts to prevent memory issues
-        const maxPosts = 200; // Keep only last 200 posts
-        if (_posts.length + newPosts.length > maxPosts) {
-          _posts.removeRange(0, (_posts.length + newPosts.length) - maxPosts);
-        }
-
         _posts.addAll(newPosts);
         _offset += newPosts.length;
       }
@@ -393,12 +387,6 @@ class PostsProvider with ChangeNotifier {
       if (newPosts.isEmpty) {
         _hasMore = false;
       } else {
-        // Limit posts to prevent memory issues
-        const maxPosts = 200; // Keep only last 200 posts
-        if (_posts.length + newPosts.length > maxPosts) {
-          _posts.removeRange(0, (_posts.length + newPosts.length) - maxPosts);
-        }
-
         _posts.addAll(newPosts);
         _offset += newPosts.length;
       }
@@ -434,12 +422,6 @@ class PostsProvider with ChangeNotifier {
       if (newPosts.isEmpty) {
         _hasMore = false;
       } else {
-        // Limit posts to prevent memory issues
-        const maxPosts = 200; // Keep only last 200 posts
-        if (_posts.length + newPosts.length > maxPosts) {
-          _posts.removeRange(0, (_posts.length + newPosts.length) - maxPosts);
-        }
-
         _posts.addAll(newPosts);
         _offset += newPosts.length;
       }
@@ -704,15 +686,6 @@ class PostsProvider with ChangeNotifier {
       if (refresh) {
         _savedPosts = newPosts;
       } else {
-        // Limit posts to prevent memory issues
-        const maxPosts = 200; // Keep only last 200 posts
-        if (_savedPosts.length + newPosts.length > maxPosts) {
-          _savedPosts.removeRange(
-            0,
-            (_savedPosts.length + newPosts.length) - maxPosts,
-          );
-        }
-
         _savedPosts.addAll(newPosts);
       }
 

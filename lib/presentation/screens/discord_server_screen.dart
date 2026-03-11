@@ -11,6 +11,7 @@ import '../../providers/discord_search_provider.dart';
 
 // Theme
 import '../theme/app_theme.dart';
+import '../widgets/skeleton_loader.dart';
 import '../widgets/app_state_widgets.dart';
 
 // Screens
@@ -104,20 +105,27 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
             ? Container(
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppTheme.darkCardColor.withValues(alpha: 0.95),
+                  color: AppTheme.getCardColor(context).withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: AppTheme.darkBorderColor.withValues(alpha: 0.5),
+                    color: AppTheme.getBorderColor(
+                      context,
+                    ).withValues(alpha: 0.5),
                   ),
                 ),
                 child: TextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(
+                    color: AppTheme.getPrimaryTextColor(context),
+                    fontSize: 14,
+                  ),
                   decoration: InputDecoration(
                     hintText: 'Search Discord servers...',
                     hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: AppTheme.getSecondaryTextColor(
+                        context,
+                      ).withValues(alpha: 0.7),
                       fontSize: 14,
                     ),
                     prefixIcon: const Icon(
@@ -182,9 +190,9 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
-                          color: AppTheme.darkSecondaryTextColor.withValues(
-                            alpha: 0.75,
-                          ),
+                          color: AppTheme.getSecondaryTextColor(
+                            context,
+                          ).withValues(alpha: 0.75),
                         ),
                       ),
                     ],
@@ -213,20 +221,20 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
               margin: const EdgeInsets.only(right: 10),
               decoration: BoxDecoration(
                 color: _isSearching
-                    ? Colors.redAccent.withValues(alpha: 0.16)
-                    : AppTheme.darkCardColor.withValues(alpha: 0.9),
+                    ? AppTheme.warningColor.withValues(alpha: 0.16)
+                    : AppTheme.getCardColor(context).withValues(alpha: 0.9),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: _isSearching
-                      ? Colors.redAccent.withValues(alpha: 0.35)
-                      : AppTheme.darkBorderColor,
+                      ? AppTheme.warningColor.withValues(alpha: 0.35)
+                      : AppTheme.getBorderColor(context),
                 ),
               ),
               child: Icon(
                 _isSearching ? Icons.close_rounded : Icons.search_rounded,
                 size: 20,
                 color: _isSearching
-                    ? Colors.redAccent
+                    ? AppTheme.warningColor
                     : AppTheme.getOnSurfaceColor(context),
               ),
             ),
@@ -279,8 +287,15 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
                     ? _filteredServers
                     : _getCurrentPopularPageServers();
 
-                if (provider.isLoading) {
-                  return const AppSkeletonList();
+                if (provider.isLoading &&
+                    (_isSearching
+                        ? _filteredServers.isEmpty
+                        : provider.popularServers.isEmpty)) {
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: 6,
+                    itemBuilder: (context, index) => const DiscordMessageSkeleton(),
+                  );
                 }
 
                 if (provider.error != null) {
@@ -313,9 +328,9 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
                           ).withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: AppTheme.darkBorderColor.withValues(
-                              alpha: 0.45,
-                            ),
+                            color: AppTheme.getBorderColor(
+                              context,
+                            ).withValues(alpha: 0.45),
                           ),
                         ),
                         child: Row(
@@ -678,14 +693,11 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
   Widget _buildLoadingMoreIndicator() {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Center(
+      child: const Center(
         child: SizedBox(
           width: 18,
           height: 18,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: AppTheme.primaryColor.withValues(alpha: 0.7),
-          ),
+          child: AppSkeleton(shape: BoxShape.circle),
         ),
       ),
     );
@@ -723,19 +735,31 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppTheme.darkCardColor.withValues(alpha: 0.94),
-            AppTheme.darkSurfaceColor.withValues(alpha: 0.94),
+            AppTheme.getCardColor(context).withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.94
+                  : 0.8,
+            ),
+            AppTheme.getElevatedSurfaceColorContext(context).withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.94
+                  : 0.8,
+            ),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.9),
+          color: AppTheme.getBorderColor(context).withValues(alpha: 0.9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withValues(
+              alpha: Theme.of(context).brightness == Brightness.dark
+                  ? 0.25
+                  : 0.1,
+            ),
             blurRadius: 18,
             spreadRadius: -10,
             offset: const Offset(0, 10),
@@ -770,19 +794,16 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
                       const SizedBox(
                         width: 10,
                         height: 10,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppTheme.primaryColor,
-                        ),
+                        child: AppSkeleton(shape: BoxShape.circle),
                       ),
                       const SizedBox(width: 5),
                     ],
                     Text(
                       '$loadedPages/$totalPages loaded',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.darkSecondaryTextColor,
+                        color: AppTheme.getSecondaryTextColor(context),
                       ),
                     ),
                   ],
@@ -811,7 +832,7 @@ class _DiscordServerScreenState extends State<DiscordServerScreen> {
   }) {
     final color = enabled
         ? (isNext ? Colors.white : AppTheme.primaryColor)
-        : AppTheme.darkSecondaryTextColor.withValues(alpha: 0.52);
+        : AppTheme.getSecondaryTextColor(context).withValues(alpha: 0.52);
 
     return Material(
       color: Colors.transparent,

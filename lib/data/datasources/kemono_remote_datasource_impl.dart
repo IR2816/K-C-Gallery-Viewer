@@ -51,13 +51,7 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
       try {
         final url = '$domain$endpoint';
         final response = await client
-            .get(Uri.parse(url), headers: finalHeaders)
-            .timeout(
-              const Duration(seconds: 15),
-              onTimeout: () {
-                throw Exception('Request timeout after 15 seconds');
-              },
-            );
+            .get(Uri.parse(url), headers: finalHeaders);
 
         final bodyTrimmed = response.body.trimLeft();
         final looksLikeHtml =

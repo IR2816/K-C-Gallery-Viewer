@@ -120,9 +120,9 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.55),
+                      Colors.black.withValues(alpha: 0.35),
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.45),
+                      Colors.black.withValues(alpha: 0.15),
                     ],
                     stops: const [0.0, 0.4, 1.0],
                   ),
@@ -154,7 +154,9 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
         } else {
           // 🔥 STRATEGI IDEAL: Fullscreen Viewer - Original quality tanpa downscale
           final imageUrl = mediaItem['url'];
-          AppLogger.debug('🔍 DEBUG: FullscreenMediaViewer loading image: $imageUrl');
+          AppLogger.debug(
+            '🔍 DEBUG: FullscreenMediaViewer loading image: $imageUrl',
+          );
 
           // 🚀 FIX: Add HTTP headers for Coomer CDN anti-hotlink protection
           final isCoomerDomain =
@@ -197,7 +199,9 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
               ),
             ),
             errorBuilder: (context, error, stackTrace) {
-              AppLogger.debug('🔍 DEBUG: FullscreenMediaViewer image load error: $error');
+              AppLogger.debug(
+                '🔍 DEBUG: FullscreenMediaViewer image load error: $error',
+              );
               AppLogger.debug('🔍 DEBUG: Failed URL was: $imageUrl');
 
               return Center(
@@ -238,13 +242,14 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
     return LayoutBuilder(
       builder: (context, constraints) {
         final mediaSize = MediaQuery.sizeOf(context);
-        final width = constraints.hasBoundedWidth && constraints.maxWidth.isFinite
+        final width =
+            constraints.hasBoundedWidth && constraints.maxWidth.isFinite
             ? constraints.maxWidth
             : mediaSize.width;
         final height =
             constraints.hasBoundedHeight && constraints.maxHeight.isFinite
-                ? constraints.maxHeight
-                : mediaSize.height;
+            ? constraints.maxHeight
+            : mediaSize.height;
 
         return Container(
           color: Colors.black,
@@ -319,7 +324,7 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
       right: 0,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: _buildTopBarRow(currentMedia),
         ),
       ),
@@ -336,34 +341,59 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
       right: 0,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (!isVideo && widget.mediaItems.length > 1)
                 _buildNavButton(
-                  icon: Icons.arrow_back,
-                  label: 'Prev',
+                  icon: Icons.chevron_left_rounded,
+                  label: '',
                   enabled: _currentIndex > 0,
                   onTap: _currentIndex > 0
                       ? () => _pageController.previousPage(
-                            duration: const Duration(milliseconds: 280),
-                            curve: Curves.easeOutCubic,
-                          )
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.fastOutSlowIn,
+                        )
                       : null,
                 ),
               if (!isVideo && widget.mediaItems.length > 1)
-                const SizedBox(width: 12),
+                const SizedBox(width: 16),
+              if (!isVideo && widget.mediaItems.length > 1)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                  ),
+                  child: Text(
+                    '${_currentIndex + 1} / ${widget.mediaItems.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ),
+              if (!isVideo && widget.mediaItems.length > 1)
+                const SizedBox(width: 16),
               if (!isVideo && widget.mediaItems.length > 1)
                 _buildNavButton(
-                  icon: Icons.arrow_forward,
-                  label: 'Next',
+                  icon: Icons.chevron_right_rounded,
+                  label: '',
                   enabled: _currentIndex < widget.mediaItems.length - 1,
                   onTap: _currentIndex < widget.mediaItems.length - 1
                       ? () => _pageController.nextPage(
-                            duration: const Duration(milliseconds: 280),
-                            curve: Curves.easeOutCubic,
-                          )
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.fastOutSlowIn,
+                        )
                       : null,
                 ),
             ],
@@ -378,82 +408,61 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
     final title = mediaItem['name'] != null
         ? _getFileName(mediaItem['name'])
         : (isVideo ? 'Video' : 'Image');
-    final typeLabel = isVideo ? 'Video' : 'Image';
-    final typeIcon = isVideo ? Icons.play_circle_fill : Icons.photo;
-    final counterText = '${_currentIndex + 1} / ${widget.mediaItems.length}';
 
     return Row(
       children: [
-        _buildIconChip(icon: Icons.close, onTap: _close),
-        const SizedBox(width: 8),
+        _buildIconChip(icon: Icons.close_rounded, onTap: _close),
+        const SizedBox(width: 12),
         Expanded(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.45),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+              color: Colors.black.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: Row(
               children: [
-                Icon(typeIcon, color: Colors.white70, size: 16),
-                const SizedBox(width: 8),
                 Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '$typeLabel | $counterText',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 12),
         _buildIconChip(
-          icon: Icons.share,
+          icon: Icons.share_rounded,
           onTap: () => _shareMedia(mediaItem),
         ),
       ],
     );
   }
 
-  Widget _buildIconChip({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildIconChip({required IconData icon, required VoidCallback onTap}) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         customBorder: const CircleBorder(),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.45),
+            color: Colors.black.withValues(alpha: 0.5),
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
-          child: Icon(icon, color: Colors.white, size: 18),
+          child: Icon(icon, color: Colors.white, size: 22),
         ),
       ),
     );
@@ -465,38 +474,23 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
     required bool enabled,
     required VoidCallback? onTap,
   }) {
-    final iconColor =
-        enabled ? Colors.white : Colors.white.withValues(alpha: 0.35);
-    final textColor =
-        enabled ? Colors.white : Colors.white.withValues(alpha: 0.35);
+    final iconColor = enabled
+        ? Colors.white
+        : Colors.white.withValues(alpha: 0.25);
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(18),
+        customBorder: const CircleBorder(),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.45),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            color: Colors.black.withValues(alpha: 0.5),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: iconColor, size: 18),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+          child: Icon(icon, color: iconColor, size: 28),
         ),
       ),
     );

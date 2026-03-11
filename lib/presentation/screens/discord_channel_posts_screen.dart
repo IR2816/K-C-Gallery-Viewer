@@ -14,6 +14,7 @@ import '../../data/services/api_header_service.dart';
 import '../providers/tracked_http_client.dart';
 import '../providers/settings_provider.dart';
 import '../theme/app_theme.dart';
+import '../widgets/skeleton_loader.dart';
 import '../widgets/app_state_widgets.dart';
 import '../../utils/logger.dart';
 import 'fullscreen_media_viewer.dart';
@@ -145,7 +146,11 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
           final currentPosts = provider.getPostsForChannel(widget.channelId);
 
           if (provider.isLoadingPosts && currentPosts.isEmpty) {
-            return const AppSkeletonList();
+            return ListView.builder(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemCount: 6,
+              itemBuilder: (context, index) => const DiscordMessageSkeleton(),
+            );
           }
 
           if (provider.postsError != null && currentPosts.isEmpty) {
@@ -184,13 +189,10 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Center(
-                child: SizedBox(
+                child: const SizedBox(
                   width: 18,
                   height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppTheme.primaryColor.withValues(alpha: 0.7),
-                  ),
+                  child: AppSkeleton(shape: BoxShape.circle),
                 ),
               ),
             );
@@ -251,16 +253,16 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                     decoration: BoxDecoration(
-                      color: AppTheme.darkCardColor,
+                      color: AppTheme.getCardColor(context),
                       borderRadius: const BorderRadius.only(
                         topRight: Radius.circular(16),
                         bottomLeft: Radius.circular(16),
                         bottomRight: Radius.circular(16),
                       ),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                      border: Border.all(color: AppTheme.getBorderColor(context).withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.05 : 0.4)),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: Colors.black.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.1 : 0.05),
                           blurRadius: 4,
                           offset: const Offset(0, 2),
                         ),
@@ -591,12 +593,7 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
                         memCacheHeight: memCacheHeight,
                         placeholder: (context, url) => Container(
                           color: Colors.black,
-                          child: const Center(
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white70,
-                            ),
-                          ),
+                          child: const AppSkeleton(shape: BoxShape.rectangle),
                         ),
                         errorWidget: (context, url, error) => Container(
                           color: Colors.black,
@@ -654,12 +651,7 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
       memCacheHeight: memCacheHeight,
       placeholder: (context, url) => Container(
         color: Colors.grey[900],
-        child: const Center(
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
-          ),
-        ),
+        child: const AppSkeleton(shape: BoxShape.rectangle),
       ),
       errorWidget: (context, url, error) {
         if (displayUrl != rawUrl && rawUrl.isNotEmpty) {
@@ -670,12 +662,7 @@ class _DiscordChannelPostsScreenState extends State<DiscordChannelPostsScreen> {
             memCacheHeight: memCacheHeight,
             placeholder: (context, url) => Container(
               color: Colors.grey[900],
-              child: const Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white54),
-                ),
-              ),
+              child: const AppSkeleton(shape: BoxShape.rectangle),
             ),
             errorWidget: (context, url, error) => Container(
               color: Colors.grey[900],

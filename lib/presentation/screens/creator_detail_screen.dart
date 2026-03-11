@@ -10,6 +10,7 @@ import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 // Domain
 import '../../domain/entities/creator.dart';
 import '../../domain/entities/post.dart';
+import '../widgets/skeleton_loader.dart';
 import '../../domain/entities/api_source.dart';
 import '../../domain/entities/discord_server.dart';
 import '../../domain/repositories/kemono_repository.dart';
@@ -434,9 +435,10 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
               child: SizedBox(
                 width: 18,
                 height: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppTheme.primaryColor,
+                child: AppSkeleton(
+                   width: 18,
+                   height: 18,
+                   shape: BoxShape.circle,
                 ),
               ),
             ),
@@ -538,8 +540,6 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
     );
   }
 
-
-
   Widget _buildTabs() {
     return SliverPersistentHeader(
       pinned: true,
@@ -548,13 +548,15 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
           color: AppTheme.getBackgroundColor(context),
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Center(
-              child: Container(
+            child: Container(
               width: MediaQuery.of(context).size.width * 0.85,
               height: 46,
               decoration: BoxDecoration(
                 color: AppTheme.getCardColor(context),
                 borderRadius: BorderRadius.circular(25),
-                border: Border.all(color: AppTheme.getBorderColor(context, opacity: 0.05)),
+                border: Border.all(
+                  color: AppTheme.getBorderColor(context, opacity: 0.05),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.2),
@@ -669,11 +671,8 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                 ],
               ),
             ),
-            child: Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: AppTheme.primaryColor,
-              ),
+            child: const AppSkeleton(
+              shape: BoxShape.rectangle,
             ),
           );
         },
@@ -750,8 +749,13 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
       blockedTags: blockedTags,
     );
     if (postsProvider.isLoading && postsProvider.posts.isEmpty) {
-      return Center(
-        child: CircularProgressIndicator(color: AppTheme.primaryColor),
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 4,
+        itemBuilder: (context, index) => const Padding(
+           padding: EdgeInsets.only(bottom: 16),
+           child: PostGridSkeleton(),
+        ),
       );
     }
 
@@ -890,14 +894,9 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                   (context, index) {
                     if (index == visiblePosts.length &&
                         postsProvider.isLoading) {
-                      return const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: AppTheme.primaryColor,
-                          ),
-                        ),
+                      return const Padding(
+                        padding: EdgeInsets.all(16),
+                        child: PostGridSkeleton(),
                       );
                     }
 
@@ -962,7 +961,7 @@ class _CreatorDetailScreenState extends State<CreatorDetailScreen>
                     ],
                   ),
                   borderRadius: BorderRadius.circular(14),
-border: Border.all(color: accentColor.withValues(alpha: 0.4)),
+                  border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                 ),
                 child: Icon(
                   Icons.dashboard_customize_rounded,
@@ -988,9 +987,9 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: AppTheme.getSecondaryTextColor(context).withValues(
-                          alpha: 0.95,
-                        ),
+                        color: AppTheme.getSecondaryTextColor(
+                          context,
+                        ).withValues(alpha: 0.95),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1030,24 +1029,29 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
   }
 
   Widget _buildOverviewChip({required IconData icon, required String label}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppTheme.darkElevatedSurfaceColor.withValues(alpha: 0.8),
+        color: AppTheme.getElevatedSurfaceColorContext(
+          context,
+        ).withValues(alpha: isDark ? 0.8 : 0.6),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.75),
+          color: AppTheme.getBorderColor(
+            context,
+          ).withValues(alpha: isDark ? 0.75 : 0.4),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppTheme.darkSecondaryTextColor),
+          Icon(icon, size: 14, color: AppTheme.getSecondaryTextColor(context)),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: AppTheme.darkSecondaryTextColor,
+            style: TextStyle(
+              color: AppTheme.getSecondaryTextColor(context),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
@@ -1069,10 +1073,23 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
 
     _ensureMediaCache(visiblePosts);
     if (postsProvider.isLoading && postsProvider.posts.isEmpty) {
-      return Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: AppTheme.primaryColor,
+      // Calculate responsive column count based on screen width
+      final screenWidth = MediaQuery.of(context).size.width;
+      int columnCount = 2;
+      if (screenWidth > 600) columnCount = 3;
+      if (screenWidth > 900) columnCount = 4;
+      
+      return MasonryGridView.builder(
+        padding: const EdgeInsets.all(4),
+        gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columnCount,
+        ),
+        mainAxisSpacing: 4,
+        crossAxisSpacing: 4,
+        itemCount: 8,
+        itemBuilder: (context, index) => AppSkeleton.rounded(
+          height: index % 2 == 0 ? 200 : 150,
+          borderRadius: 8,
         ),
       );
     }
@@ -1209,15 +1226,20 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
         ? '@${link.publicId}'
         : link.name;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppTheme.darkCardColor,
+        color: AppTheme.getCardColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(
+          color: AppTheme.getBorderColor(
+            context,
+          ).withValues(alpha: isDark ? 0.05 : 0.4),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.08),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -1283,7 +1305,7 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                             end: Alignment.bottomRight,
                             colors: [
                               serviceColor.withValues(alpha: 0.3),
-                              AppTheme.darkCardColor,
+                              AppTheme.getCardColor(context),
                             ],
                           ),
                         ),
@@ -1770,9 +1792,7 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
   Widget _buildLoadingPlaceholder() {
     return Container(
       color: Colors.grey[800],
-      child: const Center(
-        child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-      ),
+      child: const AppSkeleton(shape: BoxShape.rectangle),
     );
   }
 
@@ -1800,6 +1820,7 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
     final mediaCount = post.attachments.length + post.file.length;
     final serviceColor = _getServiceColor(post.service);
     final preview = _cleanHtmlContent(post.content);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -1808,17 +1829,23 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            AppTheme.darkCardColor.withValues(alpha: 0.98),
-            AppTheme.darkSurfaceColor.withValues(alpha: 0.94),
+            AppTheme.getCardColor(
+              context,
+            ).withValues(alpha: isDark ? 0.98 : 0.9),
+            AppTheme.getSurfaceColor(
+              context,
+            ).withValues(alpha: isDark ? 0.94 : 0.85),
           ],
         ),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.82),
+          color: AppTheme.getBorderColor(
+            context,
+          ).withValues(alpha: isDark ? 0.82 : 0.6),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.22),
+            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.08),
             blurRadius: 18,
             spreadRadius: -10,
             offset: const Offset(0, 10),
@@ -1862,8 +1889,8 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                     const Spacer(),
                     Text(
                       _formatDate(post.published),
-                      style: const TextStyle(
-                        color: AppTheme.darkSecondaryTextColor,
+                      style: TextStyle(
+                        color: AppTheme.getSecondaryTextColor(context),
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
                       ),
@@ -1873,8 +1900,8 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                 const SizedBox(height: 12),
                 Text(
                   post.title.isNotEmpty ? post.title : 'Untitled Post',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppTheme.getPrimaryTextColor(context),
                     fontSize: 17,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.25,
@@ -1888,9 +1915,9 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
                   Text(
                     preview,
                     style: TextStyle(
-                      color: AppTheme.darkSecondaryTextColor.withValues(
-                        alpha: 0.95,
-                      ),
+                      color: AppTheme.getSecondaryTextColor(
+                        context,
+                      ).withValues(alpha: 0.95),
                       fontSize: 13.5,
                       height: 1.45,
                     ),
@@ -1938,24 +1965,29 @@ border: Border.all(color: accentColor.withValues(alpha: 0.4)),
   }
 
   Widget _buildPostMetaChip({required IconData icon, required String label}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.darkElevatedSurfaceColor.withValues(alpha: 0.82),
+        color: AppTheme.getElevatedSurfaceColorContext(
+          context,
+        ).withValues(alpha: isDark ? 0.82 : 0.5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppTheme.darkBorderColor.withValues(alpha: 0.72),
+          color: AppTheme.getBorderColor(
+            context,
+          ).withValues(alpha: isDark ? 0.72 : 0.4),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: AppTheme.darkSecondaryTextColor),
+          Icon(icon, size: 13, color: AppTheme.getSecondaryTextColor(context)),
           const SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: AppTheme.darkSecondaryTextColor,
+            style: TextStyle(
+              color: AppTheme.getSecondaryTextColor(context),
               fontSize: 11,
               fontWeight: FontWeight.w600,
             ),

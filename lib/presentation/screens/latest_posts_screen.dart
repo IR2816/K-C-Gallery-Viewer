@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../domain/entities/post.dart';
 import '../../domain/entities/api_source.dart';
@@ -12,6 +13,7 @@ import 'post_detail_screen.dart';
 import 'creator_detail_screen.dart';
 import 'download_manager_screen.dart';
 import '../widgets/post_card.dart';
+import '../widgets/skeleton_loader.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 /// Latest Posts Screen - Quick Update Feed
@@ -31,31 +33,17 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
   List<Post> _posts = [];
   String? _error;
   bool _hasMore = true;
+  bool _isSwitchingSource = false;
+  bool _isFadingPage = false;
   String _selectedService = 'kemono';
   List<String> _blockedTags = [];
   TagFilterProvider? _tagFilterProvider;
   int _currentPage = 1;
   static const int _pageSize = 24;
 
-  // Memory management constants
-  static const int _maxPostsInMemory = 300;
-  static const int _memoryCleanupThreshold = 360; // Start cleanup at 360 posts
-
+  // Memory management simplified (Image cache naturally manages its own memory)
   @override
   bool get wantKeepAlive => _posts.length < 100; // Limit keep alive to prevent memory bloat
-
-  /// Memory management: Clean up old posts when list gets too large
-  void _manageMemoryUsage() {
-    if (_posts.length > _memoryCleanupThreshold) {
-      final excessCount = _posts.length - _maxPostsInMemory;
-      _posts.removeRange(0, excessCount);
-      _syncPostMediaCache();
-    }
-  }
-
-  void _syncPostMediaCache() {
-    // Keep method for compatibility with memory cleanup flow.
-  }
 
   @override
   void initState() {
@@ -82,19 +70,36 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     super.dispose();
   }
 
-  void _onSettingsChanged() {
+  Future<void> _onSettingsChanged() async {
     if (!mounted) return;
     final postsProvider = context.read<PostsProvider>();
     final newService = _settingsProvider?.defaultApiSource.name ?? 'kemono';
     final shouldReload = newService != _selectedService;
-    setState(() {
-      _selectedService = newService;
-      _blockedTags = _tagFilterProvider?.blacklist.toList() ?? [];
-      _posts = _getFilteredPosts(postsProvider.posts);
-      _currentPage = 1;
-    });
+    
     if (shouldReload) {
-      _loadInitialPosts();
+      if (_isSwitchingSource) return;
+      
+      setState(() {
+        _isSwitchingSource = true;
+        _selectedService = newService;
+        _blockedTags = _tagFilterProvider?.blacklist.toList() ?? [];
+        _posts = [];
+        _currentPage = 1;
+      });
+      
+      HapticFeedback.lightImpact();
+      await _loadInitialPosts();
+      
+      if (mounted) {
+        setState(() {
+          _isSwitchingSource = false;
+        });
+      }
+    } else {
+      setState(() {
+        _blockedTags = _tagFilterProvider?.blacklist.toList() ?? [];
+        _posts = _getFilteredPosts(postsProvider.posts);
+      });
     }
   }
 
@@ -129,7 +134,6 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       if (mounted) {
         setState(() {
           _posts = _getFilteredPosts(postsProvider.posts);
-          _manageMemoryUsage(); // Clean up memory after initial load
           _isLoading = false;
           _hasMore = postsProvider.hasMore;
         });
@@ -167,7 +171,6 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
           if (uniqueNewPosts.isNotEmpty) {
             _posts.addAll(uniqueNewPosts);
           }
-          _manageMemoryUsage(); // Clean up memory after adding new posts
           _isLoadingMore = false;
           _hasMore = hasMoreFromProvider;
         });
@@ -472,8 +475,17 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
             child: Column(
               children: [
                 _buildFilterInfoBar(),
-                Expanded(child: _buildPostList()),
-                if (_posts.isNotEmpty) _buildPaginationBar(),
+                Expanded(
+                  child: _isSwitchingSource
+                      ? _buildSwitchingSourceIndicator()
+                      : AnimatedOpacity(
+                          opacity: _isFadingPage ? 0.0 : 1.0,
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeInOut,
+                          child: _buildPostList(),
+                        ),
+                ),
+                if (_posts.isNotEmpty && !_isSwitchingSource) _buildPaginationBar(),
               ],
             ),
           ),
@@ -524,7 +536,9 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: AppTheme.darkSecondaryTextColor.withValues(alpha: 0.8),
+              color: AppTheme.getSecondaryTextColor(
+                context,
+              ).withValues(alpha: 0.8),
             ),
           ),
         ],
@@ -570,9 +584,9 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final activeColor = accentColor ?? AppTheme.getSecondaryTextColor(context);
     final isActive = accentColor != null;
-    final bgColor = isDark
-        ? AppTheme.darkCardColor.withValues(alpha: 0.84)
-        : AppTheme.lightElevatedSurfaceColor.withValues(alpha: 0.6);
+    final bgColor = AppTheme.getElevatedSurfaceColorContext(
+      context,
+    ).withValues(alpha: isDark ? 0.84 : 0.6);
 
     return GestureDetector(
       onTap: onTap,
@@ -632,9 +646,9 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
-        color: isDark
-            ? AppTheme.darkSurfaceColor.withValues(alpha: 0.82)
-            : AppTheme.lightElevatedSurfaceColor.withValues(alpha: 0.6),
+        color: AppTheme.getSurfaceColor(
+          context,
+        ).withValues(alpha: isDark ? 0.82 : 0.6),
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: AppTheme.getBorderColor(context, opacity: 0.85),
@@ -656,9 +670,9 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
             child: Container(
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: isDark
-                    ? AppTheme.darkCardColor.withValues(alpha: 0.75)
-                    : AppTheme.lightCardColor.withValues(alpha: 0.5),
+                color: AppTheme.getCardColor(
+                  context,
+                ).withValues(alpha: isDark ? 0.75 : 0.5),
                 borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                 border: Border.all(
                   color: AppTheme.getBorderColor(context, opacity: 0.8),
@@ -756,7 +770,9 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
           label,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: isSelected ? Colors.white : AppTheme.darkSecondaryTextColor,
+            color: isSelected
+                ? Colors.white
+                : AppTheme.getSecondaryTextColor(context),
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
           ),
@@ -784,6 +800,14 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
   Future<void> _goToPage(int page) async {
     if (page < 1) return;
     if (page == _currentPage) return;
+
+    if (mounted) {
+      setState(() => _isFadingPage = true);
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+
+    if (!mounted) return;
+
     setState(() {
       _currentPage = page;
     });
@@ -791,11 +815,12 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     await _ensurePageLoaded(page);
 
     if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        0,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
+      _scrollController.jumpTo(0);
+    }
+
+    if (mounted) {
+      await Future.delayed(const Duration(milliseconds: 50));
+      setState(() => _isFadingPage = false);
     }
   }
 
@@ -814,9 +839,67 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
     }
   }
 
+  Widget _buildSwitchingSourceIndicator() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.getSurfaceColorContext(context),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  blurRadius: 24,
+                  spreadRadius: 4,
+                ),
+              ],
+            ),
+            // The shimmer skeleton will look much better here than a basic spinner
+            child: AppSkeleton.circle(size: 32),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Switching API Source...',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.getPrimaryTextColor(context),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Connecting to ${_currentApiSource.name.toUpperCase()}',
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.getSecondaryTextColor(context),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildPostList() {
     if (_isLoading && _posts.isEmpty) {
-      return const AppSkeletonGrid();
+      final settings = context.watch<SettingsProvider>();
+      final int columnCount = settings.latestPostsColumns.clamp(1, 3);
+      final bool isSingleColumn = columnCount == 1;
+      
+      return MasonryGridView.builder(
+        padding: isSingleColumn 
+            ? const EdgeInsets.symmetric(vertical: 4) 
+            : const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columnCount,
+        ),
+        mainAxisSpacing: isSingleColumn ? 24 : 14,
+        crossAxisSpacing: isSingleColumn ? 0 : 12,
+        itemCount: 6, // Show 6 skeleton items
+        itemBuilder: (context, index) => const PostGridSkeleton(),
+      );
     }
 
     if (_error != null) {
@@ -833,25 +916,34 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
 
     final settings = context.watch<SettingsProvider>();
     final int columnCount = settings.latestPostsColumns.clamp(1, 3);
+    final bool isSingleColumn = columnCount == 1;
     final pagePosts = _getPagePosts();
 
     if (pagePosts.isEmpty && _isLoadingMore) {
-      return const Center(
-        child: CircularProgressIndicator(
-          strokeWidth: 2,
-          color: AppTheme.primaryColor,
+      return MasonryGridView.builder(
+        padding: isSingleColumn 
+            ? const EdgeInsets.symmetric(vertical: 4) 
+            : const EdgeInsets.fromLTRB(16, 4, 16, 4),
+        gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: columnCount,
         ),
+        mainAxisSpacing: isSingleColumn ? 24 : 14,
+        crossAxisSpacing: isSingleColumn ? 0 : 12,
+        itemCount: 6, // Show 6 skeleton items
+        itemBuilder: (context, index) => const PostGridSkeleton(),
       );
     }
 
     return MasonryGridView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
+      padding: isSingleColumn 
+            ? const EdgeInsets.symmetric(vertical: 12) 
+            : const EdgeInsets.fromLTRB(16, 4, 16, 4),
       gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columnCount,
       ),
-      mainAxisSpacing: 14,
-      crossAxisSpacing: 12,
+      mainAxisSpacing: isSingleColumn ? 28 : 14,
+      crossAxisSpacing: isSingleColumn ? 0 : 12,
       addAutomaticKeepAlives: false,
       itemCount: pagePosts.length,
       itemBuilder: (context, index) {
@@ -859,6 +951,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
         return RepaintBoundary(
           child: PostCard(
             post: post,
+            isSingleColumn: isSingleColumn,
             apiSource: settings.defaultApiSource,
             onTap: () => _navigateToPostDetail(post),
             onCreatorTap: () {
@@ -947,30 +1040,25 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       margin: const EdgeInsets.fromLTRB(16, 10, 16, 108),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        gradient: isDark
-            ? LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.darkCardColor.withValues(alpha: 0.94),
-                  AppTheme.darkSurfaceColor.withValues(alpha: 0.94),
-                ],
-              )
-            : LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppTheme.lightCardColor.withValues(alpha: 0.8),
-                  AppTheme.lightElevatedSurfaceColor.withValues(alpha: 0.8),
-                ],
-              ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppTheme.getCardColor(
+              context,
+            ).withValues(alpha: isDark ? 0.94 : 0.8),
+            AppTheme.getElevatedSurfaceColorContext(
+              context,
+            ).withValues(alpha: isDark ? 0.94 : 0.8),
+          ],
+        ),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: AppTheme.getBorderColor(context, opacity: 0.9),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.1),
             blurRadius: 18,
             spreadRadius: -10,
             offset: const Offset(0, 10),
@@ -1004,11 +1092,12 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
                   children: [
                     if (_isLoadingMore) ...[
                       const SizedBox(
-                        width: 10,
-                        height: 10,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: AppTheme.primaryColor,
+                        width: 14,
+                        height: 14,
+                        child: AppSkeleton(
+                           width: 14, 
+                           height: 14, 
+                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 5),
@@ -1017,10 +1106,10 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
                       _hasMore
                           ? '$totalLoadedPages+ loaded'
                           : '$totalLoadedPages total',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.darkSecondaryTextColor,
+                        color: AppTheme.getSecondaryTextColor(context),
                       ),
                     ),
                   ],
@@ -1049,7 +1138,7 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
   }) {
     final color = enabled
         ? (isNext ? Colors.white : AppTheme.primaryColor)
-        : AppTheme.darkSecondaryTextColor.withValues(alpha: 0.52);
+        : AppTheme.getSecondaryTextColor(context).withValues(alpha: 0.52);
 
     return Material(
       color: Colors.transparent,

@@ -1,8 +1,13 @@
 //video_player_screen.dart
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../widgets/app_video_player.dart';
 import '../theme/app_theme.dart';
+import '../../data/services/api_header_service.dart';
 
 /// Dedicated Video Player Screen untuk Post Detail
 ///
@@ -81,8 +86,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           ),
 
           // UI overlays stay on top of the constrained video
-          if (_error == null) _buildTopBar(isCoomer),
-          if (_error == null) _buildMediaInfoCard(),
+          if (_error == null)
+            Align(
+              alignment: Alignment.topCenter,
+              child: _buildTopBar(isCoomer),
+            ),
+          if (_error == null)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: _buildMediaInfoCard(),
+            ),
 
           // Loading overlay
           if (_isLoading) _buildLoadingOverlay(),
@@ -135,6 +148,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
             Expanded(child: _buildSourceChip(isCoomer)),
             const SizedBox(width: 10),
             _buildIconButton(
+              icon: Icons.download,
+              onTap: _downloadVideo,
+              tooltip: 'Download Video',
+            ),
+            const SizedBox(width: 10),
+            _buildIconButton(
               icon: Icons.share,
               onTap: _shareVideo,
               tooltip: 'Share Video',
@@ -173,16 +192,26 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Widget _buildMediaInfoCard() {
-    return Positioned(
-      left: 14,
-      right: 14,
-      bottom: 14 + MediaQuery.of(context).padding.bottom,
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        14,
+        0,
+        14,
+        40 + MediaQuery.of(context).padding.bottom,
+      ),
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.42),
+          color: Colors.black.withValues(alpha: 0.65),
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          // Add a subtle shadow for better readability
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.5),
+              blurRadius: 8,
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -244,11 +273,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                color: Colors.red,
-                size: 64,
-              ),
+              const Icon(Icons.error_outline, color: Colors.red, size: 64),
               const SizedBox(height: 16),
               const Text(
                 'Failed to load video',
@@ -261,10 +286,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               const SizedBox(height: 8),
               Text(
                 _error ?? '',
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 14,
-                ),
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -291,6 +313,76 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     // Truncate jika terlalu panjang
     return '${name.substring(0, 27)}...';
+  }
+
+  Future<void> _downloadVideo() async {
+    final url = widget.videoUrl;
+    final fileName = widget.videoName.isEmpty ? 'video.mp4' : widget.videoName;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Starting download for $fileName...'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+
+    try {
+      Directory? downloadsDirectory;
+      if (Platform.isAndroid) {
+        downloadsDirectory = Directory(
+          '/storage/emulated/0/Download/KC Download',
+        );
+      } else {
+        final dir = await getDownloadsDirectory();
+        if (dir != null) {
+          downloadsDirectory = Directory('${dir.path}/KC Download');
+        }
+      }
+
+      if (downloadsDirectory == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not access Downloads directory'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!await downloadsDirectory.exists()) {
+        await downloadsDirectory.create(recursive: true);
+      }
+
+      final savePath = '${downloadsDirectory.path}/$fileName';
+
+      final dio = Dio();
+      final referer = widget.apiSource.toLowerCase() == 'coomer'
+          ? 'https://coomer.st/'
+          : 'https://kemono.cr/';
+      final headers = ApiHeaderService.getMediaHeaders(referer: referer);
+
+      await dio.download(url, savePath, options: Options(headers: headers));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved to KC Download: $fileName'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _shareVideo() async {

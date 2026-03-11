@@ -51,12 +51,7 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
   void initState() {
     super.initState();
     _urlCandidates = _buildUrlCandidates(widget.url, widget.apiSource);
-    if (_isWebViewPreferred(widget.url, widget.apiSource)) {
-      _useWebViewFallback = true;
-      _setLoading(false);
-    } else {
-      _initializePlayer();
-    }
+    _initializePlayer();
   }
 
   @override
@@ -65,17 +60,7 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
     if (oldWidget.url != widget.url) {
       _disposeController();
       _urlCandidates = _buildUrlCandidates(widget.url, widget.apiSource);
-      if (_isWebViewPreferred(widget.url, widget.apiSource)) {
-        setState(() {
-          _useWebViewFallback = true;
-          _hasError = false;
-          _errorMessage = null;
-          _isInitialized = false;
-        });
-        _setLoading(false);
-      } else {
-        _initializePlayer();
-      }
+      _initializePlayer();
     }
   }
 
@@ -93,10 +78,6 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
   }
 
   Future<void> _initializePlayer() async {
-    if (_isWebViewPreferred(widget.url, widget.apiSource)) {
-      _setLoading(false);
-      return;
-    }
     _setLoading(true);
     setState(() {
       _hasError = false;
@@ -107,8 +88,9 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
 
     try {
       bool initialized = false;
-      final candidates =
-          _urlCandidates.isNotEmpty ? _urlCandidates : [widget.url];
+      final candidates = _urlCandidates.isNotEmpty
+          ? _urlCandidates
+          : [widget.url];
 
       for (final url in candidates) {
         final ok = await _tryInitialize(url);
@@ -127,16 +109,16 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
       setState(() {
         _hasError = true;
         _errorMessage = e.toString();
-        if (widget.allowWebViewFallback &&
-            _isCoomerSource(widget.url, widget.apiSource)) {
+        // Fallback to webview on any native player failure
+        if (widget.allowWebViewFallback) {
+          debugPrint(
+            'AppVideoPlayer: Native player failed ($e), falling back to WebView.',
+          );
           _useWebViewFallback = true;
           _hasError = false;
         }
       });
       _setLoading(false);
-      if (widget.allowWebViewFallback) {
-        // Keep error UI, but allow user to switch to WebView
-      }
       widget.onError?.call(_errorMessage);
     }
   }
@@ -158,7 +140,7 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
         videoPlayerController: controller,
         autoPlay: widget.autoplay,
         looping: false,
-        allowFullScreen: false, // we already render inside our own fullscreen page
+        allowFullScreen: true, // Enabled for better UX
         allowMuting: true,
         allowPlaybackSpeedChanging: true,
         showControls: widget.showControls,
@@ -198,6 +180,7 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
     return source == 'kemono' || lowerUrl.contains('kemono.');
   }
 
+  // ignore: unused_element
   bool _isWebViewPreferred(String url, String? apiSource) {
     return _isCoomerSource(url, apiSource) || _isKemonoSource(url, apiSource);
   }
@@ -253,8 +236,8 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
     final referer = isCoomer
         ? 'https://coomer.st/'
         : isKemono
-            ? 'https://kemono.cr/'
-            : 'https://kemono.cr/';
+        ? 'https://kemono.cr/'
+        : 'https://kemono.cr/';
     final headers = ApiHeaderService.getMediaHeaders(referer: referer);
     if (isCoomer) {
       headers['Origin'] = 'https://coomer.st';
@@ -304,10 +287,7 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircularProgressIndicator(
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
+              CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
               SizedBox(height: 12),
               Text(
                 'Loading video...',
@@ -321,9 +301,7 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
   }
 
   Widget _buildFallbackBox() {
-    return _buildSized(
-      child: Container(color: Colors.black),
-    );
+    return _buildSized(child: Container(color: Colors.black));
   }
 
   Widget _buildError() {
@@ -386,9 +364,11 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
             constraints.hasBoundedWidth && constraints.maxWidth.isFinite;
         final hasBoundedHeight =
             constraints.hasBoundedHeight && constraints.maxHeight.isFinite;
-        final width = widget.width ??
+        final width =
+            widget.width ??
             (hasBoundedWidth ? constraints.maxWidth : media.width);
-        final height = widget.height ??
+        final height =
+            widget.height ??
             (hasBoundedHeight ? constraints.maxHeight : media.height);
 
         return SizedBox(

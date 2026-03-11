@@ -9,6 +9,7 @@ import '../providers/settings_provider.dart';
 import '../providers/tag_filter_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_state_widgets.dart';
+import '../widgets/skeleton_loader.dart';
 import 'creator_detail_screen.dart';
 import 'post_detail_screen.dart';
 import '../../domain/entities/api_source.dart';
@@ -995,13 +996,10 @@ class _SavedPostsTabState extends State<SavedPostsTab>
                             (provider.hasMoreSavedPosts ? 1 : 0),
                         itemBuilder: (context, index) {
                           if (index == filteredPosts.length) {
-                            return Center(
+                            return const Center(
                               child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppTheme.getOnSurfaceColor(context),
-                                ),
+                                padding: EdgeInsets.all(16),
+                                child: PostGridSkeleton(),
                               ),
                             );
                           }

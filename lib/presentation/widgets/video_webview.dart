@@ -1,4 +1,4 @@
-﻿//video_webview.dart
+//video_webview.dart
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -166,10 +166,7 @@ class _VideoWebViewState extends State<VideoWebView> {
 
   String _buildHtml() {
     final isThumbnail = widget.isThumbnail;
-    final sourceUrls = <String>[
-      widget.url,
-      ...?widget.fallbackUrls,
-    ];
+    final sourceUrls = <String>[widget.url, ...?widget.fallbackUrls];
     final uniqueSources = <String>[];
     final seen = <String>{};
     for (final url in sourceUrls) {
@@ -190,9 +187,12 @@ class _VideoWebViewState extends State<VideoWebView> {
     margin: 0;
     padding: 0;
     background: #000;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     overflow: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
   }
   body {
     display: flex;

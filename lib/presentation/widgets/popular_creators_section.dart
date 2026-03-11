@@ -7,6 +7,7 @@ import '../../domain/entities/api_source.dart';
 import '../../domain/entities/creator.dart';
 import '../theme/app_theme.dart';
 import '../screens/creator_detail_screen.dart';
+import 'skeleton_loader.dart';
 
 /// Popular Creators Section with Service Selection
 class PopularCreatorsSection extends StatefulWidget {
@@ -245,35 +246,13 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
     final bottomPadding = AppTheme.getBottomContentPadding(context, extra: 0);
     return Container(
       constraints: BoxConstraints(
-        maxHeight:
-            MediaQuery.of(context).size.height * 0.45, // Match list height
+        maxHeight: MediaQuery.of(context).size.height * 0.45,
       ),
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      child: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppTheme.primaryColor,
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Loading popular creators...',
-              style: AppTheme.bodyStyle.copyWith(
-                color: AppTheme.getOnSurfaceColor(
-                  context,
-                ).withValues(alpha: 0.7),
-              ),
-            ),
-          ],
-        ),
+      child: ListView.builder(
+        padding: EdgeInsets.only(left: 4, right: 4, bottom: bottomPadding),
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 4,
+        itemBuilder: (context, index) => const PopularCreatorSkeleton(),
       ),
     );
   }
@@ -398,37 +377,10 @@ class _PopularCreatorsSectionState extends State<PopularCreatorsSection> {
     }
   }
 
-  /// Build loading more indicator
   Widget _buildLoadingMoreIndicator() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      child: Center(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  AppTheme.primaryColor.withValues(alpha: 0.7),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              'Loading more creators...',
-              style: AppTheme.bodyStyle.copyWith(
-                color: AppTheme.getOnSurfaceColor(
-                  context,
-                ).withValues(alpha: 0.7),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return const Padding(
+      padding: EdgeInsets.only(top: 8, bottom: 24),
+      child: PopularCreatorSkeleton(),
     );
   }
 
