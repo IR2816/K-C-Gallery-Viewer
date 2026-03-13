@@ -7,6 +7,8 @@ import '../providers/download_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_state_widgets.dart';
 
+const _kDownloadFolderPath = '/storage/emulated/0/Download/KC Download';
+
 class DownloadManagerScreen extends StatefulWidget {
   const DownloadManagerScreen({super.key});
 
@@ -26,26 +28,26 @@ class _DownloadManagerScreenState extends State<DownloadManagerScreen> {
 
   Future<void> _loadDownloadedFiles() async {
     setState(() => _isLoading = true);
-
     try {
-      final directory = await getDownloadsDirectory();
-      if (directory != null) {
-        final appDownloadDir = Directory(
-          '${directory.path}/KC_Gallery_Downloads',
-        );
+      Directory? dir;
+      if (Platform.isAndroid) {
+        dir = Directory(_kDownloadFolderPath);
+      } else {
+        final base = await getDownloadsDirectory();
+        if (base != null) dir = Directory('${base.path}/KC Download');
+      }
 
-        if (await appDownloadDir.exists()) {
-          final files = await appDownloadDir.list().toList();
-          setState(() {
-            _downloadedFiles = files.whereType<File>().toList();
-            _isLoading = false;
-          });
-        } else {
-          setState(() {
-            _downloadedFiles = [];
-            _isLoading = false;
-          });
-        }
+      if (dir != null && await dir.exists()) {
+        final files = await dir.list().toList();
+        setState(() {
+          _downloadedFiles = files.whereType<File>().toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _downloadedFiles = [];
+          _isLoading = false;
+        });
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -241,7 +243,9 @@ class _DownloadManagerScreenState extends State<DownloadManagerScreen> {
                 Text(
                   _formatFileSize(download.downloadedBytes),
                   style: AppTheme.captionStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
+                    color: AppTheme.getOnSurfaceColor(
+                      context,
+                    ).withValues(alpha: 0.6),
                   ),
                 ),
                 Text(
@@ -249,7 +253,9 @@ class _DownloadManagerScreenState extends State<DownloadManagerScreen> {
                       ? _formatFileSize(download.totalBytes)
                       : 'Unknown size',
                   style: AppTheme.captionStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
+                    color: AppTheme.getOnSurfaceColor(
+                      context,
+                    ).withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -331,7 +337,9 @@ class _DownloadManagerScreenState extends State<DownloadManagerScreen> {
               Text(
                 'KC_Gallery_Downloads',
                 style: AppTheme.captionStyle.copyWith(
-                  color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
+                  color: AppTheme.getOnSurfaceColor(
+                    context,
+                  ).withValues(alpha: 0.6),
                 ),
               ),
             ],
@@ -412,26 +420,34 @@ class _DownloadManagerScreenState extends State<DownloadManagerScreen> {
                 Icon(
                   Icons.storage,
                   size: 12,
-                  color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
+                  color: AppTheme.getOnSurfaceColor(
+                    context,
+                  ).withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   _formatFileSize(fileSize),
                   style: AppTheme.captionStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
+                    color: AppTheme.getOnSurfaceColor(
+                      context,
+                    ).withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Icon(
                   Icons.schedule,
                   size: 12,
-                  color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
+                  color: AppTheme.getOnSurfaceColor(
+                    context,
+                  ).withValues(alpha: 0.6),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   _formatDate(lastModified),
                   style: AppTheme.captionStyle.copyWith(
-                    color: AppTheme.getOnSurfaceColor(context).withValues(alpha: 0.6),
+                    color: AppTheme.getOnSurfaceColor(
+                      context,
+                    ).withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -498,14 +514,22 @@ class _DownloadManagerScreenState extends State<DownloadManagerScreen> {
 
   Future<void> _openFile(File file) async {
     try {
+      // Try using url_launcher with file URI first (works for some file types)
       final uri = Uri.file(file.path);
-      final launched = await launchUrl(uri);
+      bool launched = false;
+      try {
+        if (await canLaunchUrl(uri)) {
+          launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      } catch (_) {}
 
       if (!launched && mounted) {
+        // Fallback: show share dialog with path info
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Could not open ${file.path.split('/').last}'),
-            backgroundColor: Colors.red,
+            content: Text('File saved at: ${file.path}'),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(label: 'Copy Path', onPressed: () {}),
           ),
         );
       }

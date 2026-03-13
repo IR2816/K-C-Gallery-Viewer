@@ -1,18 +1,17 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
+
 import '../../domain/entities/api_source.dart';
 import 'video_player_screen.dart';
 import '../../utils/logger.dart';
 import '../widgets/app_video_player.dart';
-import '../../data/services/api_header_service.dart';
-import '../../utils/logger.dart';
-import '../widgets/app_video_player.dart';
+import '../providers/download_provider.dart';
 
 class FullscreenMediaViewer extends StatefulWidget {
   final List<Map<String, dynamic>> mediaItems;
@@ -613,23 +612,20 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
       }
 
       final savePath = '${downloadsDirectory.path}/$fileName';
-      final dio = Dio();
 
-      final referer = widget.apiSource == ApiSource.coomer
-          ? 'https://coomer.st/'
-          : 'https://kemono.cr/';
-      final headers = ApiHeaderService.getMediaHeaders(referer: referer);
-
-      await dio.download(url, savePath, options: Options(headers: headers));
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Saved to KC Download: $fileName'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      if (!mounted) return;
+      // Route through DownloadProvider so progress shows in Download Manager
+      context.read<DownloadProvider>().addDownload(
+        name: fileName,
+        url: url,
+        savePath: savePath,
+      );
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Download started: $fileName — check Download Manager'),
+          backgroundColor: Colors.blue,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

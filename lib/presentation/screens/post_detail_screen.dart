@@ -23,6 +23,7 @@ import '../../utils/logger.dart';
 import '../providers/posts_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/comments_provider.dart';
+import '../providers/download_provider.dart';
 import '../theme/app_theme.dart';
 import 'fullscreen_media_viewer.dart';
 import 'creator_detail_screen.dart';
@@ -1541,25 +1542,18 @@ class _PostDetailScreenState extends State<PostDetailScreen>
 
       final savePath = '${downloadsDirectory.path}/$fileName';
 
-      // Use Dio to download
-      final dio = Dio();
-      final referer = _activeApiSource == ApiSource.coomer
-          ? 'https://coomer.st/'
-          : 'https://kemono.cr/';
-      final headers = ApiHeaderService.getMediaHeaders(referer: referer);
-
-      await dio.download(
-        url,
-        savePath,
-        options: Options(headers: headers),
-        onReceiveProgress: (received, total) {
-          if (total != -1) {
-            // We can log or update UI, but for now we'll just wait for complete
-          }
-        },
+      // Route through DownloadProvider so progress shows in Download Manager
+      if (!mounted) return;
+      final downloadProvider = context.read<DownloadProvider>();
+      downloadProvider.addDownload(
+        name: fileName,
+        url: url,
+        savePath: savePath,
       );
-
-      _showSnackBar('Saved to KC Download: $fileName', Colors.green);
+      _showSnackBar(
+        'Download started: $fileName — check Download Manager',
+        Colors.blue,
+      );
     } catch (e) {
       AppLogger.warning('Download failed', tag: 'Downloader', error: e);
       _showSnackBar('Download failed: $e', Colors.red);
