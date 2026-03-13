@@ -1,9 +1,16 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
+import 'package:path_provider/path_provider.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../domain/entities/api_source.dart';
 import 'video_player_screen.dart';
+import '../../utils/logger.dart';
+import '../widgets/app_video_player.dart';
+import '../../data/services/api_header_service.dart';
 import '../../utils/logger.dart';
 import '../widgets/app_video_player.dart';
 
@@ -112,7 +119,11 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
           _buildMediaArea(),
 
           // Subtle scrim for readability (social-style UI)
-          Positioned.fill(
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 120,
             child: IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
@@ -120,11 +131,29 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Colors.black.withValues(alpha: 0.35),
+                      Colors.black.withValues(alpha: 0.5),
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.15),
                     ],
-                    stops: const [0.0, 0.4, 1.0],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 120,
+            child: IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.6),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
               ),
@@ -341,14 +370,15 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
       right: 0,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              // Left Nav
               if (!isVideo && widget.mediaItems.length > 1)
                 _buildNavButton(
                   icon: Icons.chevron_left_rounded,
-                  label: '',
                   enabled: _currentIndex > 0,
                   onTap: _currentIndex > 0
                       ? () => _pageController.previousPage(
@@ -356,38 +386,44 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
                           curve: Curves.fastOutSlowIn,
                         )
                       : null,
-                ),
-              if (!isVideo && widget.mediaItems.length > 1)
-                const SizedBox(width: 16),
+                )
+              else
+                const SizedBox(width: 52), // Placeholder to maintain center
+              // Page Indicator
               if (!isVideo && widget.mediaItems.length > 1)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: 18,
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: Colors.black.withValues(alpha: 0.65),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: Colors.white.withValues(alpha: 0.15),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
                   child: Text(
                     '${_currentIndex + 1} / ${widget.mediaItems.length}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
                     ),
                   ),
                 ),
-              if (!isVideo && widget.mediaItems.length > 1)
-                const SizedBox(width: 16),
+
+              // Right Nav
               if (!isVideo && widget.mediaItems.length > 1)
                 _buildNavButton(
                   icon: Icons.chevron_right_rounded,
-                  label: '',
                   enabled: _currentIndex < widget.mediaItems.length - 1,
                   onTap: _currentIndex < widget.mediaItems.length - 1
                       ? () => _pageController.nextPage(
@@ -395,7 +431,9 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
                           curve: Curves.fastOutSlowIn,
                         )
                       : null,
-                ),
+                )
+              else
+                const SizedBox(width: 52), // Placeholder to maintain center
             ],
           ),
         ),
@@ -410,46 +448,67 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
         : (isVideo ? 'Video' : 'Image');
 
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        _buildIconChip(icon: Icons.close_rounded, onTap: _close),
-        const SizedBox(width: 12),
+        // Pill styled back button
+        _buildIconGlassy(icon: Icons.close_rounded, onTap: _close),
+
+        // Title Pill
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.65),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
                   ),
+                ],
+              ),
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
                 ),
-              ],
+              ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
-        _buildIconChip(
-          icon: Icons.share_rounded,
-          onTap: () => _shareMedia(mediaItem),
+
+        // Action Buttons Row
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildIconGlassy(
+              icon: Icons.download_rounded,
+              onTap: () => _downloadMedia(mediaItem),
+            ),
+            const SizedBox(width: 10),
+            _buildIconGlassy(
+              icon: Icons.share_rounded,
+              onTap: () => _shareMedia(mediaItem),
+            ),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildIconChip({required IconData icon, required VoidCallback onTap}) {
+  Widget _buildIconGlassy({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -458,9 +517,15 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: Colors.black.withValues(alpha: 0.65),
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.3),
+                blurRadius: 8,
+              ),
+            ],
           ),
           child: Icon(icon, color: Colors.white, size: 22),
         ),
@@ -470,13 +535,12 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
 
   Widget _buildNavButton({
     required IconData icon,
-    required String label,
     required bool enabled,
     required VoidCallback? onTap,
   }) {
     final iconColor = enabled
         ? Colors.white
-        : Colors.white.withValues(alpha: 0.25);
+        : Colors.white.withValues(alpha: 0.2);
 
     return Material(
       color: Colors.transparent,
@@ -486,13 +550,95 @@ class _FullscreenMediaViewerState extends State<FullscreenMediaViewer>
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.black.withValues(alpha: 0.5),
+            color: Colors.black.withValues(alpha: 0.65),
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(
+              color: enabled
+                  ? Colors.white.withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.05),
+            ),
+            boxShadow: [
+              if (enabled)
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  blurRadius: 8,
+                ),
+            ],
           ),
           child: Icon(icon, color: iconColor, size: 28),
         ),
       ),
     );
+  }
+
+  Future<void> _downloadMedia(Map<String, dynamic> mediaItem) async {
+    final url = (mediaItem['url'] ?? '').toString();
+    if (url.isEmpty) return;
+
+    final fileName = _getFileName(mediaItem['name'] ?? url);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Starting download for $fileName...'),
+        backgroundColor: Colors.blue,
+      ),
+    );
+
+    try {
+      Directory? downloadsDirectory;
+      if (Platform.isAndroid) {
+        downloadsDirectory = Directory(
+          '/storage/emulated/0/Download/KC Download',
+        );
+      } else {
+        final dir = await getDownloadsDirectory();
+        if (dir != null) {
+          downloadsDirectory = Directory('${dir.path}/KC Download');
+        }
+      }
+
+      if (downloadsDirectory == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Could not access Downloads directory'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      if (!await downloadsDirectory.exists()) {
+        await downloadsDirectory.create(recursive: true);
+      }
+
+      final savePath = '${downloadsDirectory.path}/$fileName';
+      final dio = Dio();
+
+      final referer = widget.apiSource == ApiSource.coomer
+          ? 'https://coomer.st/'
+          : 'https://kemono.cr/';
+      final headers = ApiHeaderService.getMediaHeaders(referer: referer);
+
+      await dio.download(url, savePath, options: Options(headers: headers));
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Saved to KC Download: $fileName'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Download failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
