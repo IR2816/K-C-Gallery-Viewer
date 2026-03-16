@@ -10,24 +10,24 @@ class AppTheme {
   // ═══════════════════════════════════════════════
   // BRAND COLORS
   // ═══════════════════════════════════════════════
-  static const Color primaryColor = Color(0xFF7C4DFF); // More vibrant Indigo
+  static const Color primaryColor = Color(0xFF6366F1); // More vibrant Indigo
   static const Color primaryDarkColor = Color(
     0xFF6200EA,
   ); // Deeper vibrant purple
   static const Color primaryLightColor = Color(
     0xFFB388FF,
   ); // Lighter vibrant lavender
-  static const Color accentColor = Color(0xFFFF2D70); // More vibrant Rose
-  static const Color secondaryAccent = Color(0xFF00E5FF); // Brighter Teal
+  static const Color accentColor = Color(0xFFF43F5E); // More vibrant Rose
+  static const Color secondaryAccent = Color(0xFF06B6D4); // Brighter Teal
 
   // ═══════════════════════════════════════════════
   // DARK THEME SURFACES
   // ═══════════════════════════════════════════════
-  static const Color darkBackgroundColor = Color(0xFF0A0A0F);
-  static const Color darkSurfaceColor = Color(0xFF141420);
-  static const Color darkCardColor = Color(0xFF1E1E2E);
+  static const Color darkBackgroundColor = Color(0xFF050508);
+  static const Color darkSurfaceColor = Color(0xFF0D0D14);
+  static const Color darkCardColor = Color(0xFF151522);
   static const Color darkElevatedSurfaceColor = Color(0xFF252538);
-  static const Color darkBorderColor = Color(0xFF2E2E45);
+  static const Color darkBorderColor = Color(0xFF232336);
 
   // ═══════════════════════════════════════════════
   // LIGHT THEME SURFACES
@@ -364,7 +364,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(24)),
           side: BorderSide(color: darkBorderColor, width: 1),
         ),
         color: darkCardColor,
@@ -376,7 +376,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: lgPadding,
@@ -400,15 +400,15 @@ class AppTheme {
         filled: true,
         fillColor: darkCardColor,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           borderSide: BorderSide(color: darkBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           borderSide: BorderSide(color: darkBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         hintStyle: darkCaptionStyle,
@@ -490,7 +490,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(24)),
           side: BorderSide(color: lightBorderColor, width: 1),
         ),
         color: lightCardColor,
@@ -502,7 +502,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+            borderRadius: BorderRadius.all(Radius.circular(16)),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: lgPadding,
@@ -526,15 +526,15 @@ class AppTheme {
         filled: true,
         fillColor: lightSurfaceColor,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           borderSide: BorderSide(color: lightBorderColor),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           borderSide: BorderSide(color: lightBorderColor),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(pillRadius)),
+          borderRadius: BorderRadius.all(Radius.circular(16)),
           borderSide: const BorderSide(color: primaryColor, width: 2),
         ),
         hintStyle: lightCaptionStyle,

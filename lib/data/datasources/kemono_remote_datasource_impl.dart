@@ -10,6 +10,45 @@ import '../../utils/logger.dart';
 import '../../config/domain_config.dart';
 import '../../presentation/providers/tracked_http_client.dart';
 
+class _ApiCacheEntry {
+  final dynamic data;
+  final DateTime timestamp;
+  _ApiCacheEntry(this.data, this.timestamp);
+  bool get isExpired => DateTime.now().difference(timestamp).inMinutes > 5;
+}
+
+class _ApiCache {
+  static final _ApiCache _instance = _ApiCache._internal();
+  factory _ApiCache() => _instance;
+  _ApiCache._internal();
+
+  final Map<String, _ApiCacheEntry> _cache = {};
+  final Map<String, Future<http.Response>> _inFlightRequests = {};
+
+  dynamic get(String key) {
+    final entry = _cache[key];
+    if (entry != null && !entry.isExpired) {
+      return entry.data;
+    }
+    _cache.remove(key);
+    return null;
+  }
+
+  void set(String key, dynamic data) {
+    if (_cache.length > 100) {
+      final keysToRemove = _cache.keys.take(20).toList();
+      for (final k in keysToRemove) _cache.remove(k);
+    }
+    _cache[key] = _ApiCacheEntry(data, DateTime.now());
+  }
+
+  Future<http.Response>? getInFlight(String key) => _inFlightRequests[key];
+  void setInFlight(String key, Future<http.Response> request) {
+    _inFlightRequests[key] = request;
+    request.whenComplete(() => _inFlightRequests.remove(key));
+  }
+}
+
 class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
   final http.Client client;
 
@@ -30,13 +69,35 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
     }
   }
 
-  // Try multiple domains with fallback
+
+  // Try multiple domains with fallback and request deduplication
   Future<http.Response> _tryWithFallback(
     String endpoint,
     Map<String, String>? headers,
     ApiSource apiSource,
   ) async {
+    final cacheKey = '${apiSource.name}_$endpoint';
+    final cache = _ApiCache();
+
+    // Check for in-flight requests first to deduplicate
+    final inFlight = cache.getInFlight(cacheKey);
+    if (inFlight != null) {
+      AppLogger.debug('Deduping request: $endpoint');
+      return await inFlight;
+    }
+
+    final requestFuture = _executeTryWithFallback(endpoint, headers, apiSource);
+    cache.setInFlight(cacheKey, requestFuture);
+    return await requestFuture;
+  }
+
+  Future<http.Response> _executeTryWithFallback(
+    String endpoint,
+    Map<String, String>? headers,
+    ApiSource apiSource,
+  ) async {
     final domains = _getDomains(apiSource);
+
     String? lastError;
 
     // Use ApiHeaderService for consistent headers
@@ -101,11 +162,21 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
     String? service,
     ApiSource apiSource = ApiSource.kemono,
   }) async {
+    final endpoint = '/v1/creators.txt';
+    final cacheKey = 'creators_${apiSource.name}';
+    final cache = _ApiCache();
+    final cachedData = cache.get(cacheKey);
+    if (cachedData != null) {
+      final list = (cachedData as List).map((e) => CreatorModel.fromJson(e)).toList();
+      if (service != null && service.isNotEmpty) {
+        return list.where((c) => c.service == service).toList();
+      }
+      return list;
+    }
+
     final headers = ApiHeaderService.getApiHeaders();
 
-    // Preferred: use documented creators endpoint.
     try {
-      const endpoint = '/v1/creators.txt';
       final response = await _tryWithFallback(endpoint, headers, apiSource);
 
       final bodyTrimmed = response.body.trimLeft();
@@ -221,6 +292,17 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
       'KemonoRemoteDataSource: getCreatorPosts endpoint=$endpoint apiSource=$apiSource',
     );
 
+    final cacheKey = '${apiSource.name}_$endpoint';
+    final cache = _ApiCache();
+
+    final cachedData = cache.get(cacheKey);
+    if (cachedData != null) {
+      return (cachedData as List)
+          .whereType<Map<String, dynamic>>()
+          .map((e) => PostModel.fromJson(e))
+          .toList();
+    }
+
     final headers = ApiHeaderService.getApiHeaders();
 
     try {
@@ -247,6 +329,7 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
         );
       }
 
+      cache.set(cacheKey, jsonList);
       return jsonList
           .whereType<Map<String, dynamic>>()
           .map((e) => PostModel.fromJson(e))
@@ -304,6 +387,13 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
     final cleanCreatorId = creatorId.trim();
     final cleanPostId = postId.trim();
     final endpoint = '/v1/$service/user/$cleanCreatorId/post/$cleanPostId';
+    final cacheKey = '${apiSource.name}_$endpoint';
+    final cache = _ApiCache();
+
+    final cachedData = cache.get(cacheKey);
+    if (cachedData != null) {
+      return PostModel.fromJson(cachedData);
+    }
 
     final headers = ApiHeaderService.getApiHeaders();
 
@@ -312,16 +402,6 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
         'KemonoRemoteDataSource: getPost endpoint=$endpoint apiSource=$apiSource',
       );
       final response = await _tryWithFallback(endpoint, headers, apiSource);
-
-      debugPrint(
-        'KemonoRemoteDataSource: getPost response status=${response.statusCode}',
-      );
-      debugPrint(
-        'KemonoRemoteDataSource: getPost response body length=${response.body.length}',
-      );
-      debugPrint(
-        'KemonoRemoteDataSource: getPost response body preview=${response.body.length > 200 ? response.body.substring(0, 200) : response.body}',
-      );
 
       if (response.body.trim().startsWith('<!') ||
           response.body.trim().startsWith('<html')) {
@@ -332,16 +412,7 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
 
       final dynamic decoded = json.decode(response.body);
       if (decoded is Map<String, dynamic>) {
-        debugPrint(
-          'KemonoRemoteDataSource: getPost JSON keys=${decoded.keys.toList()}',
-        );
-        debugPrint(
-          'KemonoRemoteDataSource: getPost content length=${decoded['content']?.toString().length ?? 0}',
-        );
-        debugPrint(
-          'KemonoRemoteDataSource: getPost content preview=${decoded['content']?.toString().length != null && decoded['content'].toString().length > 100 ? decoded['content'].toString().substring(0, 100) : decoded['content']}',
-        );
-        debugPrint('KemonoRemoteDataSource: getPost tags=${decoded['tags']}');
+        cache.set(cacheKey, decoded);
         return PostModel.fromJson(decoded);
       }
       throw Exception('Unexpected response shape. Expected JSON object.');
@@ -388,6 +459,7 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
         );
       }
 
+      cache.set(cacheKey, jsonList);
       return jsonList
           .whereType<Map<String, dynamic>>()
           .map((e) => PostModel.fromJson(e))
