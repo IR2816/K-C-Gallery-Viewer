@@ -53,14 +53,14 @@ class PostCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isSingleColumn ? Colors.transparent : cardBg,
-        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(16),
+        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(AppTheme.mdRadius),
         border: isSingleColumn ? null : Border.all(color: borderColor, width: 1),
         boxShadow: isSingleColumn ? null : [AppTheme.getCardShadow()],
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(16),
+        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(AppTheme.mdRadius),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

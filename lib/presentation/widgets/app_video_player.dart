@@ -130,6 +130,7 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
       final controller = VideoPlayerController.networkUrl(
         Uri.parse(url),
         httpHeaders: headers,
+        videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true, allowBackgroundPlayback: false),
       );
       _controller = controller;
 
@@ -140,10 +141,16 @@ class _AppVideoPlayerState extends State<AppVideoPlayer> {
         videoPlayerController: controller,
         autoPlay: widget.autoplay,
         looping: false,
-        allowFullScreen: true, // Enabled for better UX
+        allowFullScreen: true,
         allowMuting: true,
         allowPlaybackSpeedChanging: true,
         showControls: widget.showControls,
+        zoomAndPan: true, // Allow zooming into video
+        bufferingBuilder: (context) {
+          return const Center(
+            child: CircularProgressIndicator(color: AppTheme.primaryColor),
+          );
+        },
         showControlsOnInitialize: false,
         materialProgressColors: ChewieProgressColors(
           playedColor: AppTheme.primaryColor,
