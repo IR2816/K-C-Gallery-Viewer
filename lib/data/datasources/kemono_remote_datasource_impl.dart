@@ -189,6 +189,9 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
 
       final dynamic decoded = json.decode(response.body);
       final List<dynamic> jsonList = decoded is List ? decoded : [];
+
+      cache.set(cacheKey, jsonList);
+
       final creators = jsonList
           .whereType<Map<String, dynamic>>()
           .map((e) => CreatorModel.fromJson(e))
@@ -432,6 +435,17 @@ class KemonoRemoteDataSourceImpl implements KemonoRemoteDataSource {
     final endpoint = trimmed.isEmpty
         ? '/v1/posts?o=$offset&l=$limit'
         : '/v1/posts?q=${Uri.encodeComponent(query)}&o=$offset&l=$limit';
+
+    final cacheKey = '${apiSource.name}_$endpoint';
+    final cache = _ApiCache();
+
+    final cachedData = cache.get(cacheKey);
+    if (cachedData != null) {
+      return (cachedData as List)
+          .whereType<Map<String, dynamic>>()
+          .map((e) => PostModel.fromJson(e))
+          .toList();
+    }
 
     final headers = ApiHeaderService.getApiHeaders();
 
