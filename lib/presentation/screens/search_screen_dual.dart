@@ -461,7 +461,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                   child: TabBar(
                     controller: _tabController,
                     indicator: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(24),
                       color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     ),
                     dividerColor: Colors.transparent,
@@ -1488,7 +1488,7 @@ class _SearchScreenDualState extends State<SearchScreenDual>
                           width: 56,
                           height: 56,
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.3),
                               width: 2,

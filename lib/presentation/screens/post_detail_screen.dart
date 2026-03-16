@@ -2163,7 +2163,7 @@ class _PostDetailScreenState extends State<PostDetailScreen>
             title,
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
               letterSpacing: -0.2,
               color: Theme.of(context).brightness == Brightness.dark
                   ? Colors.white
@@ -3390,10 +3390,18 @@ class _PostDetailScreenState extends State<PostDetailScreen>
           // Comment body with better text handling
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppTheme.getSurfaceColor(context).withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(10),
+              color: AppTheme.getElevatedSurfaceColor(context),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(16),
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+                topLeft: Radius.circular(4),
+              ),
+              border: Border.all(
+                color: AppTheme.getBorderColor(context).withValues(alpha: 0.3),
+              ),
             ),
             child: Text(
               comment.content,
