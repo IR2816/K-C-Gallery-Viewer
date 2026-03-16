@@ -146,11 +146,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
             final currentColor = _navItems[_currentIndex].color;
 
             return ClipRRect(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(36),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
                 child: Container(
-                  height: 82,
+                  height: 84,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
@@ -165,7 +165,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen>
                               const Color(0xFFF2F6FF).withValues(alpha: 0.94),
                             ],
                     ),
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(36),
                     border: Border.all(
                       color: (isDark ? Colors.white : Colors.black).withValues(
                         alpha: 0.12,

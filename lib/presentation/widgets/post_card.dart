@@ -53,14 +53,14 @@ class PostCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: isSingleColumn ? Colors.transparent : cardBg,
-        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(AppTheme.mdRadius),
+        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(16),
         border: isSingleColumn ? null : Border.all(color: borderColor, width: 1),
         boxShadow: isSingleColumn ? null : [AppTheme.getCardShadow()],
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(AppTheme.mdRadius),
+        borderRadius: isSingleColumn ? BorderRadius.zero : BorderRadius.circular(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -94,6 +94,11 @@ class PostCard extends StatelessWidget {
                 height: 34,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppTheme.getBorderColor(context).withValues(alpha: 0.5),
+                    width: 1.5,
+                  ),
+
                   gradient: const LinearGradient(
                     colors: [AppTheme.primaryColor, AppTheme.accentColor],
                     begin: Alignment.topLeft,
@@ -151,7 +156,7 @@ class PostCard extends StatelessWidget {
 
           // Service badge pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: serviceColor.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppTheme.pillRadius),

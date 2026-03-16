@@ -895,8 +895,8 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
         gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: columnCount,
         ),
-        mainAxisSpacing: isSingleColumn ? 24 : 14,
-        crossAxisSpacing: isSingleColumn ? 0 : 12,
+        mainAxisSpacing: isSingleColumn ? 32 : 16,
+        crossAxisSpacing: isSingleColumn ? 0 : 16,
         itemCount: 6, // Show 6 skeleton items
         itemBuilder: (context, index) => const PostGridSkeleton(),
       );
@@ -927,8 +927,8 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
         gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: columnCount,
         ),
-        mainAxisSpacing: isSingleColumn ? 24 : 14,
-        crossAxisSpacing: isSingleColumn ? 0 : 12,
+        mainAxisSpacing: isSingleColumn ? 32 : 16,
+        crossAxisSpacing: isSingleColumn ? 0 : 16,
         itemCount: 6, // Show 6 skeleton items
         itemBuilder: (context, index) => const PostGridSkeleton(),
       );
@@ -942,8 +942,8 @@ class _LatestPostsScreenState extends State<LatestPostsScreen>
       gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: columnCount,
       ),
-      mainAxisSpacing: isSingleColumn ? 28 : 14,
-      crossAxisSpacing: isSingleColumn ? 0 : 12,
+      mainAxisSpacing: isSingleColumn ? 32 : 16,
+      crossAxisSpacing: isSingleColumn ? 0 : 16,
       addAutomaticKeepAlives: false,
       itemCount: pagePosts.length,
       itemBuilder: (context, index) {
